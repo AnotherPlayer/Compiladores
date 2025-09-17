@@ -32,5 +32,15 @@ public class Estado {
 
 
     }
+
+    Estado tieneTransition( char c ){
+
+        Estado R = new Estado();
+        R.clear();
+
+
+        return R;
+        
+    }
     
 }

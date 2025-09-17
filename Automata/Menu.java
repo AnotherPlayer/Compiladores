@@ -1,0 +1,25 @@
+/*
+ * Interfaz para el Menu de automaatas.
+ * Columnas:
+ * 1.- Crear Automata
+ *  a. AFN basico ( 1 char )
+ *  b. AFD basico ( 2 char )
+ *  c. Union
+ *  d. Concatenacion
+ *  e. Cerradura positiva
+ *  f. Cerradura Kleene
+ *  g. Cerradura opcional
+ * 2.- Mostrar Automata
+ *  a. Mostrar AFN
+ *  b. Mostrar AFD ¿Realizar aqui la conversión?
+ * 
+*/
+
+public class Menu{
+    public static void main(String[] args) {
+        
+
+
+    }
+
+}

@@ -31,14 +31,5 @@ public class Transicion {
 
     }
 
-    Estado HasTransition( char c ){
-
-        Estado R = new Estado();
-        R.clear();
-
-
-        return R;
-
-    }
     
 }

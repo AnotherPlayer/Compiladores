@@ -12,22 +12,28 @@ public class Transicion {
 
     Transicion( char c,Estado e ){
 
-        simboloInf = simboloSup = c;
+        simboloSup = simboloInf = c;
         EdoDestino = e;
 
     }
 
     Transicion( char cInf,char cSup,Estado e ){
 
-        simboloInf = cInf;
         simboloSup = cSup;
+        simboloInf = cInf;
         EdoDestino = e;
 
     }
 
-    void clear(){
+    int clear(){
 
-        
+        if( this.EdoDestino != null ){
+            this.EdoDestino = null;
+            this.simboloInf = this.simboloSup = '\0';
+            return 1; //Se realizó la limpieza
+        }
+
+        return 0;
 
     }
 

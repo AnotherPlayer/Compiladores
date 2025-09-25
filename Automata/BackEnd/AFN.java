@@ -103,6 +103,11 @@ public class AFN {
     //Operación concatenación
     AFN join( AFN F2 ){
 
+        for ( Estado e : this.EdosAcept )
+            for( Transicion t : F2.EdoInicial.transiciones )
+                e.EdoAcept = false;
+        
+
         
 
         return this;

@@ -1,3 +1,4 @@
+package FrontEnd;
 /*
  * Interfaz para el Menu de automaatas.
  * Columnas:

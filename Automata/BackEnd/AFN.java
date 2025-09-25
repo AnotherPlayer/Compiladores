@@ -1,3 +1,4 @@
+package BackEnd;
 import java.util.HashSet;
 import java.util.Stack;
 
@@ -108,7 +109,8 @@ public class AFN {
                 e.EdoAcept = false;
         
 
-        
+        this.EdosAcept.clear();
+        this.EdosAcept.union( F2.EdosAcept );
 
         return this;
 

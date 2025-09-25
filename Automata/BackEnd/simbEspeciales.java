@@ -1,3 +1,4 @@
+package BackEnd;
 public class simbEspeciales {
 
     public static char EPSILON = (char)5;

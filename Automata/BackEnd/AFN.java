@@ -1,25 +1,26 @@
 package BackEnd;
-import java.util.HashSet;
+
+import java.util.ArrayList;
 import java.util.Stack;
 
 public class AFN {
 
-    HashSet<Estado> Estados;
+    ArrayList<Estado> Estados;
     Estado EdoInicial;
-    HashSet<char> alfabeto;
-    HashSet<Estado> EdosAcept;
+    ArrayList<char> alfabeto;
+    ArrayList<Estado> EdosAcept;
     
     AFN(){
 
-        Estados = new HashSet<Estado>();
+        Estados = new ArrayList<Estado>();
         Estados.clear();
 
         EdoInicial = null;
 
-        alfabeto = new HashSet<char>();
+        alfabeto = new ArrayList<char>();
         alfabeto.clear();
 
-        EdosAcept = new HashSet<Estado>();
+        EdosAcept = new ArrayList<Estado>();
         EdosAcept.clear();
         
 
@@ -138,9 +139,9 @@ public class AFN {
     }
 
     //Cerradura de épsilon
-    HashSet<Estado> CerraduraEpsilon( Estado e ){
+    ArrayList<Estado> CerraduraEpsilon( Estado e ){
 
-        HashSet<Estado> C = new HashSet<Estado>();
+        ArrayList<Estado> C = new ArrayList<Estado>();
         Stack<Estado> P = new Stack<Estado>();
         Estado e2;
 
@@ -168,24 +169,24 @@ public class AFN {
 
     }
 
-    HashSet<Estado> CerraduraEpsilon( HashSet<Estado> E ){
+    ArrayList<Estado> CerraduraEpsilon( ArrayList<Estado> E ){
 
-        HashSet<Estado> R = new HashSet<Estado>();
+        ArrayList<Estado> R = new ArrayList<Estado>();
 
         R.clear();
 
         for ( Estado e : E )
             //R.union(  CerraduraEpsilon( e ) );
-            R = new HashSet<Estado>( R ); //Hacer la unión
+            R = new ArrayList<Estado>( R ); //Hacer la unión
 
         return R;
 
     }
 
     //Mover
-    HashSet<Estado> Mover( Estado e,char c ){
+    ArrayList<Estado> Mover( Estado e,char c ){
 
-        HashSet<Estado> R = new HashSet<Estado>();
+        ArrayList<Estado> R = new ArrayList<Estado>();
         R.clear();
 
             for( Transicion t : e.transiciones )
@@ -196,9 +197,9 @@ public class AFN {
 
     }
     
-    HashSet<Estado> Mover( HashSet<Estado> E,char c ){
+    ArrayList<Estado> Mover( ArrayList<Estado> E,char c ){
 
-        HashSet<Estado> R = new HashSet<Estado>();
+        ArrayList<Estado> R = new ArrayList<Estado>();
         R.clear();
 
         for ( Estado e : E )
@@ -211,23 +212,23 @@ public class AFN {
     }
 
     //IrA
-    HashSet<Estado> IrA( Estado e,char c ){
+    ArrayList<Estado> IrA( Estado e,char c ){
 
         return CerraduraEpsilon( Mover( e,c ) );
 
     }
 
-    HashSet<Estado> IrA( HashSet<Estado> E,char c ){
+    ArrayList<Estado> IrA( ArrayList<Estado> E,char c ){
 
         return CerraduraEpsilon( Mover( E,c ) );
 
     }
 
-    public HashSet<Estado> getEstados() {
+    public ArrayList<Estado> getEstados() {
         return Estados;
     }
 
-    public void setEstados(HashSet<Estado> estados) {
+    public void setEstados(ArrayList<Estado> estados) {
         Estados = estados;
     }
 
@@ -239,11 +240,11 @@ public class AFN {
         EdoInicial = edoInicial;
     }
 
-    public HashSet<Estado> getEdosAcept() {
+    public ArrayList<Estado> getEdosAcept() {
         return EdosAcept;
     }
 
-    public void setEdosAcept(HashSet<Estado> edosAcept) {
+    public void setEdosAcept(ArrayList<Estado> edosAcept) {
         EdosAcept = edosAcept;
     }
 

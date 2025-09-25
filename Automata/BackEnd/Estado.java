@@ -1,5 +1,5 @@
 package BackEnd;
-import java.util.HashSet;
+import java.util.ArrayList;
 
 public class Estado {
 
@@ -7,7 +7,7 @@ public class Estado {
     boolean EdoAcept;
     int token;
 
-    HashSet<Transicion> transiciones;
+    ArrayList<Transicion> transiciones;
     static int NumEstados = 0;
 
     Estado(){
@@ -15,7 +15,7 @@ public class Estado {
         IdEdo = NumEstados++;
         EdoAcept = false;
         token = -1;
-        transiciones = new HashSet<Transicion>();
+        transiciones = new ArrayList<Transicion>();
         transiciones.clear();
 
     }
@@ -29,7 +29,7 @@ public class Estado {
         
     }
 
-    void union( HashSet<Estado> Estados ){
+    void union( ArrayList<Estado> Estados ){
 
         //????
 

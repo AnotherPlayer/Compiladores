@@ -1,4 +1,7 @@
 package FrontEnd;
+
+//---------Equipo 9---------
+//Presentación del proyecto --> Jueves 16 de Octubre (4° Equipo)
 /*
  * Interfaz para el Menu de automaatas.
  * Columnas:

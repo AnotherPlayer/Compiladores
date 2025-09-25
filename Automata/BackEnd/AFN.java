@@ -5,10 +5,10 @@ import java.util.Stack;
 
 public class AFN {
 
-    ArrayList<Estado> Estados;
-    Estado EdoInicial;
-    ArrayList<char> alfabeto;
-    ArrayList<Estado> EdosAcept;
+    private ArrayList<Estado> Estados;
+    private Estado EdoInicial;
+    private ArrayList<char> alfabeto;
+    private ArrayList<Estado> EdosAcept;
     
     AFN(){
 
@@ -22,7 +22,6 @@ public class AFN {
 
         EdosAcept = new ArrayList<Estado>();
         EdosAcept.clear();
-        
 
     }
 
@@ -112,6 +111,10 @@ public class AFN {
 
         this.EdosAcept.clear();
         this.EdosAcept.union( F2.EdosAcept );
+        this.alfabeto.union( F2.alfabeto );
+
+        F2.Estados.remove( F2.alfabeto );
+        this.Estados.union( F2.Estados );
 
         return this;
 
@@ -120,12 +123,54 @@ public class AFN {
     //Cerradura positiva (+)
     AFN cerrPos(){
 
+        Estado e1,e2;
+        e1 = new Estado();
+        e2 = new Estado();
+
+        for( Estado e : this.EdosAcept ){
+            
+            e.transiciones.add( new Transicion( simbEspeciales.EPSILON,this.EdoInicial ) );
+            e.transiciones.add( new Transicion( simbEspeciales.EPSILON,e2 ) );
+            e.EdoAcept = false;
+
+        }
+
+        e1.transiciones.add( new Transicion( simbEspeciales.EPSILON,this.EdoInicial ) );
+        
+        this.EdoInicial = e1;
+        this.EdosAcept.clear();
+        this.EdosAcept.add(e2);
+        this.Estados.add(e1);
+        this.Estados.add(e2);
+
         return this;
 
     }
 
     //Cerradura de Kleene (*)
     AFN cerrKleene(){
+
+        Estado e1,e2;
+        e1 = new Estado();
+        e2 = new Estado();
+
+        for( Estado e : this.EdosAcept ){
+            
+            e.transiciones.add( new Transicion( simbEspeciales.EPSILON,this.EdoInicial ) );
+            e.transiciones.add( new Transicion( simbEspeciales.EPSILON,e2 ) );
+            e.EdoAcept = false;
+
+        }
+
+        e1.transiciones.add( new Transicion( simbEspeciales.EPSILON,this.EdoInicial ) );
+        
+        this.EdoInicial = e1;
+        this.EdosAcept.clear();
+        this.EdosAcept.add(e2);
+        this.Estados.add(e1);
+        this.Estados.add(e2);
+
+        e1.transiciones.add( new Transicion( simbEspeciales.EPSILON,e2 ) );
 
         return this;
 
@@ -134,6 +179,27 @@ public class AFN {
     //Operación opcional (?)
     AFN opcional(){
 
+        Estado e1,e2;
+        e1 = new Estado();
+        e2 = new Estado();
+
+        for( Estado e : this.EdosAcept ){
+            
+            e.transiciones.add( new Transicion( simbEspeciales.EPSILON,e2 ) );
+            e.EdoAcept = false;
+
+        }
+
+        e1.transiciones.add( new Transicion( simbEspeciales.EPSILON,this.EdoInicial ) );
+        
+        this.EdoInicial = e1;
+        this.EdosAcept.clear();
+        this.EdosAcept.add(e2);
+        this.Estados.add(e1);
+        this.Estados.add(e2);
+
+        e1.transiciones.add( new Transicion( simbEspeciales.EPSILON,e2 ) );
+
         return this;
 
     }
@@ -141,8 +207,8 @@ public class AFN {
     //Cerradura de épsilon
     ArrayList<Estado> CerraduraEpsilon( Estado e ){
 
-        ArrayList<Estado> C = new ArrayList<Estado>();
-        Stack<Estado> P = new Stack<Estado>();
+        ArrayList<Estado> C = new ArrayList<Estado>();  //Conjunto resultado
+        Stack<Estado> P = new Stack<Estado>();          //Pila
         Estado e2;
 
         C.clear();
@@ -162,7 +228,6 @@ public class AFN {
                         P.push( t.EdoDestino );
 
             }
-
         }
 
         return C;

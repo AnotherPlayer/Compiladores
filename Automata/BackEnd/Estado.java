@@ -29,7 +29,7 @@ public class Estado {
         
     }
 
-    void union( ArrayList<Estado> Estados ){
+    public void union( ArrayList<Estado> Estados ){
 
         //????
 

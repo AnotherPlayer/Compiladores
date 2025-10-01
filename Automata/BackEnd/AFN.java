@@ -7,7 +7,7 @@ public class AFN {
 
     private ArrayList<Estado> Estados;
     private Estado EdoInicial;
-    private ArrayList<char> alfabeto;
+    private ArrayList<Character> alfabeto;
     private ArrayList<Estado> EdosAcept;
     
     AFN(){
@@ -17,7 +17,7 @@ public class AFN {
 
         EdoInicial = null;
 
-        alfabeto = new ArrayList<char>();
+        alfabeto = new ArrayList<Character>();
         alfabeto.clear();
 
         EdosAcept = new ArrayList<Estado>();
@@ -63,7 +63,7 @@ public class AFN {
         this.EdosAcept.add(e2);
 
         for( int i=c1 ; i<=c2 ; i++ )
-            this.alfabeto.add( i );
+            this.alfabeto.add((char)i);
         
         return this;
 

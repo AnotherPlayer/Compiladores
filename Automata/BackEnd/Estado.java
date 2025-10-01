@@ -28,12 +28,6 @@ public class Estado {
         return R;
         
     }
-
-    public void union( ArrayList<Estado> Estados ){
-
-        //????
-
-    }
     
     void clear(){
         

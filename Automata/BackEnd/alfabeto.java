@@ -1,17 +1,30 @@
 package BackEnd;
 
-public class alfabeto {
+import java.util.ArrayList;
 
-    alfabeto(){
+public class Alfabeto {
 
+    ArrayList<Character> simbolos;
 
+    Alfabeto(){
+
+        simbolos = new ArrayList<Character>();
+        simbolos.clear();
 
     }
     
-    void union( alfabeto a ){
+    void union( Alfabeto a ){
 
-        //Vas Memo, pon el código
+        for (Character c : a.simbolos)
+            if (!this.simbolos.contains(c))
+            this.simbolos.add(c);
 
-    }   
+    }
+    
+    void clear(){
+
+        simbolos.clear();
+
+    }
     
 }

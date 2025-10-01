@@ -27,4 +27,14 @@ public class Alfabeto {
 
     }
     
+    boolean add( char c ){
+
+        if( simbolos.add(c) )
+            return true;
+
+        return false;
+
+    }
+
 }
+

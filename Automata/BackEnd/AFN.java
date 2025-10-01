@@ -87,7 +87,7 @@ public class AFN {
         e2.EdoAcept = true;
 
         this.EdoInicial = e1;
-        this.Estados.union( F2.Estados );
+        this.Estados.addAll(F2.Estados);
 
         this.Estados.add(e1);
         this.Estados.add(e2);
@@ -110,7 +110,7 @@ public class AFN {
         
 
         this.EdosAcept.clear();
-        this.EdosAcept.union( F2.EdosAcept );
+        this.EdosAcept.addAll( F2.EdosAcept );
         this.alfabeto.union( F2.alfabeto );
 
         F2.Estados.remove( F2.alfabeto );

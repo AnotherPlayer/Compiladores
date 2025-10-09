@@ -114,7 +114,7 @@ public class AFN {
         this.alfabeto.union( F2.alfabeto );
 
         F2.Estados.remove( F2.alfabeto );
-        //this.Estados.
+        this.Estados.addAll( F2.Estados );
 
         return this;
 
@@ -241,8 +241,7 @@ public class AFN {
         R.clear();
 
         for ( Estado e : E )
-            //R.union(  CerraduraEpsilon( e ) );
-            R = new ArrayList<Estado>( R ); //Hacer la unión
+            R.union( CerraduraEpsilon( e ) );
 
         return R;
 

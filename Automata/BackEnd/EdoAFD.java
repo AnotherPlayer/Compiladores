@@ -4,6 +4,7 @@ public class EdoAFD {
 
     int[] TransAFD;
 	int Id;            //--> En caso de usar conjuntos
+	int token;
 	
 	EdoAFD(){
 		TransAFD = new int[257];

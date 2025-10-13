@@ -1,44 +1,149 @@
 package BackEnd;
 
-import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class AFD {
 
-    EdoAFD[] EdosAFD;
-	ArrayList<Character> alfabeto;
-	int NumEdos;
+    private EdoAFD[] EdosAFD;
+	private Alfabeto alfabeto;
+	private int NumEdos;
 	
-	AFD(){
+	public AFD(){
 		NumEdos = 0;
-		alfabeto = new ArrayList<Character>();
+		alfabeto = new Alfabeto();
 	}
 	
-	AFD( int n ){
+	public AFD( int n ){
 		EdosAFD = new EdoAFD[n];
 		NumEdos = n;
-		alfabeto = new ArrayList<Character>();
+		alfabeto = new Alfabeto();
+		for(int i=0;i<n;i++){
+			EdosAFD[i] = new EdoAFD();
+			EdosAFD[i].Id = i;
+		}
 	}
 
-	AFD( int n,ArrayList<Character> alf ){
-		EdosAFD = new EdoAFD[n];
-		NumEdos = n;
-		alfabeto = new ArrayList<Character>();
+	public AFD( int n,Alfabeto alf ){
+		this(n);
 		alfabeto.clear();
-		alfabeto.union(alf);
+		if(alf != null){
+			alfabeto.union(alf);
+		}
 	}
 	
-	boolean SaveAFD( String nameFile ){
-		//Vas Memo, pon el código
-
-        return true;
-
+	public EdoAFD[] getEstados(){
+		return EdosAFD;
 	}
 
-	boolean LoadAFD( String nameFile ){
-		//Vas Memo, te toca el código
-		
-		return true;
-		
+	public Alfabeto getAlfabeto(){
+		return alfabeto;
+	}
+
+	public int getNumEdos(){
+		return NumEdos;
+	}
+
+	public void setEstado(int index,EdoAFD estado){
+		if(index < 0 || index >= NumEdos){
+			throw new IllegalArgumentException("Índice de estado fuera de rango");
+		}
+		EdosAFD[index] = estado;
+	}
+
+	public boolean SaveAFD( String nameFile ){
+		if(nameFile == null || nameFile.isEmpty()){
+			return false;
+		}
+
+		try (BufferedWriter writer = Files.newBufferedWriter(Path.of(nameFile))) {
+			writer.write(Integer.toString(NumEdos));
+			writer.newLine();
+			for(int i=0;i<NumEdos;i++){
+				EdoAFD edo = EdosAFD[i];
+				if(edo == null){
+					edo = new EdoAFD();
+					edo.Id = i;
+				}
+				writer.write(Integer.toString(edo.Id));
+				writer.write(" ");
+				writer.write(Integer.toString(edo.token));
+				writer.newLine();
+				for(int j=0;j<edo.TransAFD.length;j++){
+					writer.write(Integer.toString(edo.TransAFD[j]));
+					if(j < edo.TransAFD.length - 1){
+						writer.write(" ");
+					}
+				}
+				writer.newLine();
+			}
+			writer.write(Integer.toString(alfabeto.size()));
+			writer.newLine();
+			for(char c : alfabeto.asList()){
+				writer.write(Integer.toString((int)c));
+				writer.newLine();
+			}
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	public boolean LoadAFD( String nameFile ){
+		if(nameFile == null || nameFile.isEmpty()){
+			return false;
+		}
+
+		try (BufferedReader reader = Files.newBufferedReader(Path.of(nameFile))) {
+			String line = reader.readLine();
+			if(line == null){
+				return false;
+			}
+			NumEdos = Integer.parseInt(line.trim());
+			EdosAFD = new EdoAFD[NumEdos];
+			for(int i=0;i<NumEdos;i++){
+				line = reader.readLine();
+				if(line == null){
+					return false;
+				}
+				String[] parts = line.trim().split("\\s+");
+				if(parts.length < 2){
+					return false;
+				}
+				EdoAFD edo = new EdoAFD();
+				edo.Id = Integer.parseInt(parts[0]);
+				edo.token = Integer.parseInt(parts[1]);
+				line = reader.readLine();
+				if(line == null){
+					return false;
+				}
+				String[] transParts = line.trim().split("\\s+");
+				for(int j=0;j<edo.TransAFD.length && j<transParts.length;j++){
+					edo.TransAFD[j] = Integer.parseInt(transParts[j]);
+				}
+				EdosAFD[i] = edo;
+			}
+			alfabeto.clear();
+			line = reader.readLine();
+			if(line == null){
+				return false;
+			}
+			int alfSize = Integer.parseInt(line.trim());
+			for(int i=0;i<alfSize;i++){
+				line = reader.readLine();
+				if(line == null){
+					return false;
+				}
+				int codePoint = Integer.parseInt(line.trim());
+				alfabeto.add((char)codePoint);
+			}
+			return true;
+		} catch (IOException | NumberFormatException e) {
+			return false;
+		}
 	}
 
 }

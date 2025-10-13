@@ -4,16 +4,16 @@ import java.util.ArrayList;
 
 public class Alfabeto {
 
-    ArrayList<Character> simbolos;
+    private final ArrayList<Character> simbolos;
 
-    Alfabeto(){
+    public Alfabeto(){
 
         simbolos = new ArrayList<Character>();
         simbolos.clear();
 
     }
     
-    void union( Alfabeto a ){
+    public void union(Alfabeto a){
 
         for (Character c : a.simbolos)
             if (!this.simbolos.contains(c))
@@ -21,13 +21,13 @@ public class Alfabeto {
 
     }
     
-    void clear(){
+    public void clear(){
 
         simbolos.clear();
 
     }
     
-    boolean add( char c ){
+    public boolean add(char c){
 
         if( simbolos.add(c) )
             return true;
@@ -36,5 +36,16 @@ public class Alfabeto {
 
     }
 
-}
+    public boolean contains(char c){
+        return simbolos.contains(c);
+    }
 
+    public int size(){
+        return simbolos.size();
+    }
+
+    public ArrayList<Character> asList(){
+        return new ArrayList<Character>(simbolos);
+    }
+
+}

@@ -1,24 +1,25 @@
 package BackEnd;
+
 public class Transicion {
 
-    char simboloInf;
-    char simboloSup;
-    Estado EdoDestino;
+    public char simboloInf;
+    public char simboloSup;
+    public Estado EdoDestino;
 
-    Transicion(){
+    public Transicion(){
 
         EdoDestino = null;
 
     }
 
-    Transicion( char c,Estado e ){
+    public Transicion( char c,Estado e ){
 
         simboloSup = simboloInf = c;
         EdoDestino = e;
 
     }
 
-    Transicion( char cInf,char cSup,Estado e ){
+    public Transicion( char cInf,char cSup,Estado e ){
 
         simboloSup = cSup;
         simboloInf = cInf;
@@ -26,7 +27,7 @@ public class Transicion {
 
     }
 
-    int clear(){
+    public int clear(){
 
         if( this.EdoDestino != null ){
             this.EdoDestino = null;

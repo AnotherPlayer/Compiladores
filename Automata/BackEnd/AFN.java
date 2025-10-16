@@ -1,6 +1,8 @@
 package BackEnd;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -74,6 +76,29 @@ public class AFN {
 
     }
 
+    public AFN doEpsilon(){
+
+        Estados.clear();
+        EdosAcept.clear();
+        alfabeto.clear();
+
+        Estado e1 = new Estado();
+        Estado e2 = new Estado();
+
+        Estados.add(e1);
+        Estados.add(e2);
+
+        EdoInicial = e1;
+
+        e1.addTransicion( new Transicion(SimbEspeciales.EPSILON,e2) );
+        e2.EdoAcept = true;
+
+        EdosAcept.add(e2);
+
+        return this;
+
+    }
+
     public static AFN fromString(String input){
         if(input == null || input.isEmpty()){
             throw new IllegalArgumentException("La sentencia para el AFN no puede estar vacía.");
@@ -86,6 +111,10 @@ public class AFN {
             resultado.join(siguiente);
         }
         return resultado;
+    }
+    
+    public static AFN fromRegex(String regex){
+        return RegexAFNBuilder.fromRegex(regex);
     }
 
     public AFN copia(){
@@ -164,33 +193,106 @@ public class AFN {
         return f1.copia().opcional();
     }
 
+    public void asignarToken(int token){
+        for(Estado e : this.EdosAcept){
+            e.setToken(token);
+        }
+    }
+
+    public AFD toAFD(){
+        if(this.EdoInicial == null){
+            throw new IllegalStateException("El AFN no tiene estado inicial definido.");
+        }
+
+        ArrayList<Character> simbolos = this.alfabeto.asList();
+
+        Map<String,Integer> subconjuntoIndice = new HashMap<String,Integer>();
+        ArrayList<ArrayList<Estado>> subconjuntos = new ArrayList<ArrayList<Estado>>();
+        ArrayDeque<ArrayList<Estado>> cola = new ArrayDeque<ArrayList<Estado>>();
+        ArrayList<EdoAFD> estadosAFD = new ArrayList<EdoAFD>();
+
+        ArrayList<Estado> inicial = CerraduraEpsilon(this.EdoInicial);
+        ordenarEstados(inicial);
+        String claveInicial = claveSubconjunto(inicial);
+        subconjuntoIndice.put(claveInicial, 0);
+        subconjuntos.add(inicial);
+        cola.add(inicial);
+
+        while(!cola.isEmpty()){
+            ArrayList<Estado> actual = cola.poll();
+            String claveActual = claveSubconjunto(actual);
+            int indiceActual = subconjuntoIndice.get(claveActual);
+
+            while(estadosAFD.size() <= indiceActual){
+                estadosAFD.add(null);
+            }
+            EdoAFD edoActual = estadosAFD.get(indiceActual);
+            if(edoActual == null){
+                edoActual = new EdoAFD();
+                edoActual.Id = indiceActual;
+                asignarAceptacion(edoActual, actual);
+                estadosAFD.set(indiceActual, edoActual);
+            }
+
+            for(char simbolo : simbolos){
+                ArrayList<Estado> destino = IrA(actual, simbolo);
+                ordenarEstados(destino);
+                if(destino.isEmpty()){
+                    edoActual.TransAFD[simbolo & 0xFF] = -1;
+                    continue;
+                }
+
+                String claveDestino = claveSubconjunto(destino);
+                Integer indiceDestino = subconjuntoIndice.get(claveDestino);
+                if(indiceDestino == null){
+                    indiceDestino = subconjuntoIndice.size();
+                    subconjuntoIndice.put(claveDestino, indiceDestino);
+                    subconjuntos.add(destino);
+                    cola.add(destino);
+
+                    while(estadosAFD.size() <= indiceDestino){
+                        estadosAFD.add(null);
+                    }
+                    EdoAFD nuevoEdo = new EdoAFD();
+                    nuevoEdo.Id = indiceDestino;
+                    asignarAceptacion(nuevoEdo, destino);
+                    estadosAFD.set(indiceDestino, nuevoEdo);
+                }
+                edoActual.TransAFD[simbolo & 0xFF] = indiceDestino;
+            }
+        }
+
+        AFD resultado = new AFD(estadosAFD.size(), this.alfabeto);
+        for(int i=0;i<estadosAFD.size();i++){
+            EdoAFD edo = estadosAFD.get(i);
+            if(edo == null){
+                edo = new EdoAFD();
+                edo.Id = i;
+                estadosAFD.set(i, edo);
+            }
+            resultado.setEstado(i, edo);
+        }
+        return resultado;
+    }
+
     //Operación unión
     public AFN union( AFN F2 ){
 
+        if(F2 == null){
+            return this;
+        }
+
         Estado nuevoInicio = new Estado();
-        Estado nuevoFin = new Estado();
         
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,this.EdoInicial ) );
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,F2.EdoInicial ) );
 
-        for( Estado e : this.EdosAcept ){
-            e.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
-            e.EdoAcept = false;
-        }
-        for( Estado e : F2.EdosAcept ){
-            e.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
-            e.EdoAcept = false;
-        }
-
-        nuevoFin.EdoAcept = true;
-
         this.EdoInicial = nuevoInicio;
-        addUniqueStateList(this.Estados, F2.Estados);
-        addUniqueState(this.Estados, nuevoInicio);
-        addUniqueState(this.Estados, nuevoFin);
 
-        this.EdosAcept.clear();
-        this.EdosAcept.add(nuevoFin);
+        addUniqueState(this.Estados, nuevoInicio);
+        addUniqueStateList(this.Estados, F2.Estados);
+
+        addUniqueStateList(this.EdosAcept, F2.EdosAcept);
 
         this.alfabeto.union( F2.alfabeto );
         
@@ -204,6 +306,7 @@ public class AFN {
         for ( Estado e : this.EdosAcept ){
             e.addTransicion( new Transicion( SimbEspeciales.EPSILON,F2.EdoInicial ) );
             e.EdoAcept = false;
+            e.setToken(-1);
         }
 
         addUniqueStateList(this.Estados, F2.Estados);
@@ -220,6 +323,7 @@ public class AFN {
 
         Estado nuevoInicio = new Estado();
         Estado nuevoFin = new Estado();
+        int token = minimoTokenAceptacion();
 
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,this.EdoInicial ) );
         for( Estado e : this.EdosAcept ){
@@ -227,10 +331,12 @@ public class AFN {
             e.addTransicion( new Transicion( SimbEspeciales.EPSILON,this.EdoInicial ) );
             e.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
             e.EdoAcept = false;
+            e.setToken(-1);
 
         }
 
         nuevoFin.EdoAcept = true;
+        nuevoFin.setToken(token);
         
         this.EdoInicial = nuevoInicio;
         this.EdosAcept.clear();
@@ -247,6 +353,7 @@ public class AFN {
 
         Estado nuevoInicio = new Estado();
         Estado nuevoFin = new Estado();
+        int token = minimoTokenAceptacion();
 
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,this.EdoInicial ) );
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
@@ -256,10 +363,12 @@ public class AFN {
             e.addTransicion( new Transicion( SimbEspeciales.EPSILON,this.EdoInicial ) );
             e.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
             e.EdoAcept = false;
+            e.setToken(-1);
 
         }
 
         nuevoFin.EdoAcept = true;
+        nuevoFin.setToken(token);
         
         this.EdoInicial = nuevoInicio;
         this.EdosAcept.clear();
@@ -276,6 +385,7 @@ public class AFN {
 
         Estado nuevoInicio = new Estado();
         Estado nuevoFin = new Estado();
+        int token = minimoTokenAceptacion();
 
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,this.EdoInicial ) );
         nuevoInicio.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
@@ -284,10 +394,12 @@ public class AFN {
             
             e.addTransicion( new Transicion( SimbEspeciales.EPSILON,nuevoFin ) );
             e.EdoAcept = false;
+            e.setToken(-1);
 
         }
 
         nuevoFin.EdoAcept = true;
+        nuevoFin.setToken(token);
         
         this.EdoInicial = nuevoInicio;
         this.EdosAcept.clear();
@@ -415,6 +527,15 @@ public class AFN {
                     sb.append(", ");
                 }
             }
+            sb.append(" (Tokens: ");
+            for(int i=0;i<EdosAcept.size();i++){
+                int token = EdosAcept.get(i).getToken();
+                sb.append(token >= 0 ? Integer.toString(token) : "-");
+                if(i < EdosAcept.size() -1){
+                    sb.append(", ");
+                }
+            }
+            sb.append(")");
         }
         sb.append("\nTransiciones:\n");
         for(Estado estado : Estados){
@@ -433,6 +554,49 @@ public class AFN {
             }
         }
         return sb.toString();
+    }
+
+    private void ordenarEstados(ArrayList<Estado> estados){
+        Collections.sort(estados, (a, b) -> Integer.compare(a.getId(), b.getId()));
+    }
+
+    private String claveSubconjunto(ArrayList<Estado> estados){
+        if(estados.isEmpty()){
+            return "vacio";
+        }
+        StringBuilder sb = new StringBuilder();
+        for(int i=0;i<estados.size();i++){
+            if(i>0){
+                sb.append(',');
+            }
+            sb.append(estados.get(i).getId());
+        }
+        return sb.toString();
+    }
+
+    private void asignarAceptacion(EdoAFD estadoDet, ArrayList<Estado> subconjunto){
+        int token = Integer.MAX_VALUE;
+        boolean esAceptacion = false;
+        for(Estado e : subconjunto){
+            if(e.isAceptacion()){
+                esAceptacion = true;
+                if(e.getToken() >= 0 && e.getToken() < token){
+                    token = e.getToken();
+                }
+            }
+        }
+        estadoDet.esAceptacion = esAceptacion;
+        estadoDet.token = esAceptacion ? (token == Integer.MAX_VALUE ? -1 : token) : -1;
+    }
+
+    private int minimoTokenAceptacion(){
+        int token = Integer.MAX_VALUE;
+        for(Estado e : this.EdosAcept){
+            if(e.getToken() >= 0 && e.getToken() < token){
+                token = e.getToken();
+            }
+        }
+        return token == Integer.MAX_VALUE ? -1 : token;
     }
 
     private void addUniqueState(ArrayList<Estado> lista, Estado estado){

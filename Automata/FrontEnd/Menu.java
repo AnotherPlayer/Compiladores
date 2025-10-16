@@ -1,4 +1,3 @@
-package FrontEnd;
 import com.automata.frontend.AutomataMenuGUI;
 
 //---------Equipo 9---------

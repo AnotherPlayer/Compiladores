@@ -5,6 +5,9 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 
 public class AFD {
 
@@ -39,8 +42,19 @@ public class AFD {
 		return EdosAFD;
 	}
 
+	public EdoAFD getEstado(int index){
+		if(index < 0 || index >= NumEdos){
+			throw new IllegalArgumentException("Índice de estado fuera de rango");
+		}
+		return EdosAFD[index];
+	}
+
 	public Alfabeto getAlfabeto(){
 		return alfabeto;
+	}
+
+	public List<Character> getSimbolos(){
+		return alfabeto.asList();
 	}
 
 	public int getNumEdos(){
@@ -143,6 +157,156 @@ public class AFD {
 			return true;
 		} catch (IOException | NumberFormatException e) {
 			return false;
+		}
+	}
+
+	public TransitionTable buildTransitionTable(){
+		List<Character> simbolos = getSimbolos();
+		Collections.sort(simbolos);
+		List<ColumnDefinition> columnas = construirColumnas(simbolos);
+
+		List<String> headers = new ArrayList<String>();
+		headers.add("Estado");
+		for(ColumnDefinition columna : columnas){
+			headers.add(columna.label);
+		}
+		headers.add("Token");
+		headers.add("Acepta");
+
+		List<String[]> filas = new ArrayList<String[]>();
+		for(int i=0;i<NumEdos;i++){
+			EdoAFD edo = EdosAFD[i];
+			if(edo == null){
+				edo = new EdoAFD();
+				edo.Id = i;
+				EdosAFD[i] = edo;
+			}
+			String[] fila = new String[headers.size()];
+			fila[0] = Integer.toString(i);
+			for(int j=0;j<columnas.size();j++){
+				fila[1 + j] = valorTransicion(edo, columnas.get(j));
+			}
+			fila[headers.size()-2] = edo.token >= 0 ? Integer.toString(edo.token) : "";
+			fila[headers.size()-1] = edo.esAceptacion ? "Sí" : "No";
+			filas.add(fila);
+		}
+		return new TransitionTable(headers, filas);
+	}
+
+	public boolean exportTransitionTable(Path path){
+		try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+			TransitionTable tabla = buildTransitionTable();
+			writer.write(String.join("\t", tabla.headers));
+			writer.newLine();
+			for(String[] fila : tabla.rows){
+				writer.write(String.join("\t", fila));
+				writer.newLine();
+			}
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	public static class TransitionTable{
+		public final List<String> headers;
+		public final List<String[]> rows;
+
+		public TransitionTable(List<String> headers, List<String[]> rows){
+			this.headers = headers;
+			this.rows = rows;
+		}
+	}
+
+	private List<ColumnDefinition> construirColumnas(List<Character> simbolos){
+		ColumnDefinition digitos = new ColumnDefinition("D");
+		ColumnDefinition letras = new ColumnDefinition("L");
+		ColumnDefinition espacios = new ColumnDefinition("S");
+		java.util.LinkedHashMap<Character, ColumnDefinition> otros = new java.util.LinkedHashMap<Character, ColumnDefinition>();
+
+		for(char c : simbolos){
+			if(Character.isDigit(c)){
+				digitos.add(c);
+			}else if(Character.isLetter(c)){
+				letras.add(c);
+			}else if(Character.isWhitespace(c)){
+				espacios.add(c);
+			}else{
+				ColumnDefinition col = otros.get(c);
+				if(col == null){
+					col = new ColumnDefinition(formatearSimbolo(c));
+					otros.put(c, col);
+				}
+				col.add(c);
+			}
+		}
+
+		List<ColumnDefinition> resultado = new ArrayList<ColumnDefinition>();
+		if(!digitos.isEmpty()){
+			resultado.add(digitos);
+		}
+		if(!letras.isEmpty()){
+			resultado.add(letras);
+		}
+		if(!espacios.isEmpty()){
+			resultado.add(espacios);
+		}
+		resultado.addAll(otros.values());
+		return resultado;
+	}
+
+	private String valorTransicion(EdoAFD edo, ColumnDefinition columna){
+		if(columna.simbolos.isEmpty()){
+			return "-";
+		}
+		ArrayList<String> valores = new ArrayList<String>();
+		for(char c : columna.simbolos){
+			int destino = edo.TransAFD[c & 0xFF];
+			String valor = destino >= 0 ? Integer.toString(destino) : "-";
+			if(!valores.contains(valor)){
+				valores.add(valor);
+			}
+		}
+		if(valores.isEmpty()){
+			return "-";
+		}
+		if(valores.size() == 1){
+			return valores.get(0);
+		}
+		return String.join("/", valores);
+	}
+
+	private String formatearSimbolo(char c){
+		if(c == SimbEspeciales.EPSILON){
+			return "ε";
+		}
+		if(c == SimbEspeciales.FIN){
+			return "FIN";
+		}
+		if(Character.isWhitespace(c)){
+			return "WS(" + Integer.toString((int)c) + ")";
+		}
+		if(Character.isISOControl(c)){
+			return "ASCII " + Integer.toString((int)c);
+		}
+		return Character.toString(c);
+	}
+
+	private static class ColumnDefinition{
+		final String label;
+		final ArrayList<Character> simbolos;
+
+		ColumnDefinition(String label){
+			this.label = label;
+			this.simbolos = new ArrayList<Character>();
+		}
+
+		void add(char c){
+			simbolos.add(c);
+		}
+
+		boolean isEmpty(){
+			return simbolos.isEmpty();
 		}
 	}
 

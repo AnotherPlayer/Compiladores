@@ -19,6 +19,30 @@ public class Estado {
 
     }
 
+    public int getId(){
+        return IdEdo;
+    }
+
+    public boolean isAceptacion(){
+        return EdoAcept;
+    }
+
+    public void setAceptacion(boolean aceptacion){
+        this.EdoAcept = aceptacion;
+    }
+
+    public int getToken(){
+        return token;
+    }
+
+    public void setToken(int token){
+        this.token = token;
+    }
+
+    public ArrayList<Transicion> getTransiciones(){
+        return transiciones;
+    }
+
     public Estado tieneTransition( char c ){
 
         for(Transicion t : transiciones){

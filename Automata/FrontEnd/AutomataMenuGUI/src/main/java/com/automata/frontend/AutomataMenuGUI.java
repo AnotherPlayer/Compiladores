@@ -5,6 +5,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.util.Arrays;
+
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -12,7 +18,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -29,7 +39,25 @@ import javax.swing.SwingConstants;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
-import javax.swing.JFileChooser; // Nuevo: Para simular selección de archivos
+import javax.swing.JFileChooser;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.view.mxGraph;
+import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import BackEnd.AFN;
+import BackEnd.AFD;
+import BackEnd.Estado;
+import BackEnd.Transicion;
+import BackEnd.EdoAFD;
+import BackEnd.SimbEspeciales;
+import BackEnd.AFD;
 
 public class AutomataMenuGUI extends JFrame {
 
@@ -54,7 +82,12 @@ public class AutomataMenuGUI extends JFrame {
     private boolean sidebarVisible = true;
 
     // Lista para almacenar los nombres de los autómatas creados
-    private List<String> createdAutomataNames = new ArrayList<>();
+    private final List<String> createdAutomataNames = new ArrayList<>();
+    private final Map<String, AFN> afnMap = new HashMap<>();
+    private final List<String> createdAfdNames = new ArrayList<>();
+    private final Map<String, AFD> afdMap = new HashMap<>();
+    private final Map<Character, Integer> tokenPorSimbolo = new HashMap<>();
+    private int nextTokenValue = 40;
 
     // JComboBoxes para las operaciones
     private JComboBox<String> comboUnion1;
@@ -244,15 +277,79 @@ public class AutomataMenuGUI extends JFrame {
     
     // Muestra el Diálogo de Conversión (Herramientas)
     private void showConversionDialog() {
-        // Este diálogo se construiría similar a los paneles del menú lateral
-        JPanel content = createDefaultCard("Funcionalidad: Conversión AFN a AFD");
-        JLabel hint = new JLabel("Aquí se implementaría la selección de un AFN existente para iniciar la conversión.");
-        content.add(hint);
-        
+        if(createdAutomataNames.isEmpty()){
+            JOptionPane.showMessageDialog(this, "No hay AFN disponibles. Crea uno primero.", "Conversión AFN → AFD", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.setBackground(COLOR_AZUL_SUAVE);
+
+        JLabel lblTitulo = new JLabel("Selecciona el AFN a convertir:");
+        lblTitulo.setAlignmentX(CENTER_ALIGNMENT);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTitulo.setForeground(COLOR_TEXTO_OSCURO);
+        panel.add(lblTitulo);
+        panel.add(Box.createVerticalStrut(12));
+
+        JComboBox<String> comboAFN = new JComboBox<>(createdAutomataNames.toArray(new String[0]));
+        comboAFN.setMaximumSize(new Dimension(240, 30));
+        panel.add(comboAFN);
+        panel.add(Box.createVerticalStrut(16));
+
+        JLabel lblNombre = new JLabel("Nombre para el nuevo AFD (opcional):");
+        lblNombre.setAlignmentX(CENTER_ALIGNMENT);
+        lblNombre.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblNombre.setForeground(COLOR_TEXTO_OSCURO);
+        panel.add(lblNombre);
+
+        JTextField txtNombre = new JTextField();
+        txtNombre.setMaximumSize(new Dimension(240, 30));
+        panel.add(txtNombre);
+        panel.add(Box.createVerticalStrut(18));
+
+        JButton btnConvertir = new RoundedButton("Convertir", 10);
+        btnConvertir.setBackground(COLOR_AZUL_ACCENT);
+        btnConvertir.setForeground(Color.WHITE);
+        btnConvertir.setAlignmentX(CENTER_ALIGNMENT);
+        panel.add(btnConvertir);
+
         JDialog dialog = new JDialog(this, "Herramientas: Convertir AFN a AFD", true);
-        dialog.getContentPane().add(content);
-        dialog.setSize(500, 300);
+        dialog.getContentPane().add(panel);
+        dialog.setSize(420, 260);
         dialog.setLocationRelativeTo(this);
+
+        btnConvertir.addActionListener(ev -> {
+            String seleccionado = (String) comboAFN.getSelectedItem();
+            if(seleccionado == null){
+                JOptionPane.showMessageDialog(dialog, "Selecciona un AFN válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String nombreAFD = txtNombre.getText().trim();
+            if(nombreAFD.isEmpty()){
+                nombreAFD = seleccionado + "_AFD";
+            }
+            if(afdMap.containsKey(nombreAFD)){
+                JOptionPane.showMessageDialog(dialog, "Ya existe un AFD con el nombre '" + nombreAFD + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            try{
+                AFN base = afnMap.get(seleccionado);
+                if(base == null){
+                    JOptionPane.showMessageDialog(dialog, "No fue posible recuperar el AFN seleccionado.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                AFD afd = base.copia().toAFD();
+                registerAFD(nombreAFD, afd);
+                dialog.dispose();
+                showAfdDetails("AFD generado", nombreAFD, afd);
+            }catch(Exception ex){
+                JOptionPane.showMessageDialog(dialog, "Ocurrió un error durante la conversión: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         dialog.setVisible(true);
     }
     
@@ -522,14 +619,27 @@ private JPanel createDefaultCard(String title) {
 
             if (automataName.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Por favor, ingrese un nombre para el autómata.", "Error", JOptionPane.ERROR_MESSAGE);
-            } else if (input.isEmpty()) {
+                return;
+            }
+            if (afnMap.containsKey(automataName)) {
+                JOptionPane.showMessageDialog(this, "Ya existe un autómata con el nombre '" + automataName + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (input.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Por favor, ingrese una sentencia.", "Error", JOptionPane.ERROR_MESSAGE);
-            } else {
-                createdAutomataNames.add(automataName);
-                updateAutomataLists(); // Al darle clic se actualizan los JComboBox
-                JOptionPane.showMessageDialog(this, "AFN '" + automataName + "' creado para la sentencia: '" + input + "'", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            try {
+                AFN nuevo = AFN.fromString(input);
+                int token = calcularTokenParaLexema(input);
+                registerAFN(automataName, nuevo, token);
+                showAutomataDetails("AFN creado", automataName, nuevo);
                 txtNombre.setText("");
                 txtInput.setText("");
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "No se pudo crear el AFN: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         panel.add(btnCrear);
@@ -620,11 +730,28 @@ private JPanel createDefaultCard(String title) {
         btnUnir.addActionListener(e -> {
             String auto1 = (String) comboUnion1.getSelectedItem();
             String auto2 = (String) comboUnion2.getSelectedItem();
-            if (auto1 != null && auto2 != null) {
-                // Lógica de unión
-                JOptionPane.showMessageDialog(this, "Unión de " + auto1 + " y " + auto2 + " realizada.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            if (auto1 == null || auto2 == null) {
                 JOptionPane.showMessageDialog(this, "Por favor, seleccione dos autómatas válidos.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            AFN afn1 = afnMap.get(auto1);
+            AFN afn2 = afnMap.get(auto2);
+            if (afn1 == null || afn2 == null) {
+                JOptionPane.showMessageDialog(this, "No se pudieron recuperar los autómatas seleccionados.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            java.util.List<String> eliminar = Arrays.asList(auto1, auto2);
+            String sugerencia = auto1 + "_U_" + auto2;
+            String nuevoNombre = solicitarNombreDisponible(sugerencia, eliminar);
+            if (nuevoNombre != null) {
+                try {
+                    AFN resultado = AFN.unir(afn1, afn2);
+                    removeAFNs(eliminar);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Unión completada", nuevoNombre, resultado);
+                } catch (Exception exUnion) {
+                    JOptionPane.showMessageDialog(this, "No se pudo realizar la unión: " + exUnion.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         panel.add(btnUnir);
@@ -673,11 +800,28 @@ private JPanel createDefaultCard(String title) {
         btnConcatenar.addActionListener(e -> {
             String auto1 = (String) comboConcatenacion1.getSelectedItem();
             String auto2 = (String) comboConcatenacion2.getSelectedItem();
-            if (auto1 != null && auto2 != null) {
-                // Lógica de concatenación
-                JOptionPane.showMessageDialog(this, "Concatenación de " + auto1 + " y " + auto2 + " realizada.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            if (auto1 == null || auto2 == null) {
                 JOptionPane.showMessageDialog(this, "Por favor, seleccione dos autómatas válidos.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            AFN afn1 = afnMap.get(auto1);
+            AFN afn2 = afnMap.get(auto2);
+            if (afn1 == null || afn2 == null) {
+                JOptionPane.showMessageDialog(this, "No se pudieron recuperar los autómatas seleccionados.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            java.util.List<String> eliminar = Arrays.asList(auto1, auto2);
+            String sugerencia = auto1 + "_C_" + auto2;
+            String nuevoNombre = solicitarNombreDisponible(sugerencia, eliminar);
+            if (nuevoNombre != null) {
+                try {
+                    AFN resultado = AFN.concatenar(afn1, afn2);
+                    removeAFNs(eliminar);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Concatenación completada", nuevoNombre, resultado);
+                } catch (Exception exJoin) {
+                    JOptionPane.showMessageDialog(this, "No se pudo realizar la concatenación: " + exJoin.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         panel.add(btnConcatenar);
@@ -715,11 +859,26 @@ private JPanel createDefaultCard(String title) {
         btnCerradura.setAlignmentX(CENTER_ALIGNMENT);
         btnCerradura.addActionListener(e -> {
             String auto = (String) comboCerraduraPositiva.getSelectedItem();
-            if (auto != null) {
-                // Lógica de cerradura
-                JOptionPane.showMessageDialog(this, "Cerradura Positiva aplicada a: " + auto, "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            if (auto == null) {
                 JOptionPane.showMessageDialog(this, "Por favor, seleccione un autómata válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            AFN base = afnMap.get(auto);
+            if (base == null) {
+                JOptionPane.showMessageDialog(this, "No se pudo recuperar el autómata '" + auto + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            java.util.List<String> eliminar = java.util.Collections.singletonList(auto);
+            String nuevoNombre = solicitarNombreDisponible(auto + "_pos", eliminar);
+            if (nuevoNombre != null) {
+                try {
+                    AFN resultado = AFN.cerraduraPositiva(base);
+                    removeAFNs(eliminar);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Cerradura positiva", nuevoNombre, resultado);
+                } catch (Exception exCPos) {
+                    JOptionPane.showMessageDialog(this, "No se pudo aplicar la cerradura positiva: " + exCPos.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         panel.add(btnCerradura);
@@ -757,11 +916,26 @@ private JPanel createDefaultCard(String title) {
         btnCerradura.setAlignmentX(CENTER_ALIGNMENT);
         btnCerradura.addActionListener(e -> {
             String auto = (String) comboCerraduraKleene.getSelectedItem();
-            if (auto != null) {
-                // Lógica de cerradura
-                JOptionPane.showMessageDialog(this, "Cerradura Kleene aplicada a: " + auto, "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            if (auto == null) {
                 JOptionPane.showMessageDialog(this, "Por favor, seleccione un autómata válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            AFN base = afnMap.get(auto);
+            if (base == null) {
+                JOptionPane.showMessageDialog(this, "No se pudo recuperar el autómata '" + auto + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            java.util.List<String> eliminar = java.util.Collections.singletonList(auto);
+            String nuevoNombre = solicitarNombreDisponible(auto + "_kleene", eliminar);
+            if (nuevoNombre != null) {
+                try {
+                    AFN resultado = AFN.cerraduraKleene(base);
+                    removeAFNs(eliminar);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Cerradura Kleene", nuevoNombre, resultado);
+                } catch (Exception exCK) {
+                    JOptionPane.showMessageDialog(this, "No se pudo aplicar la cerradura Kleene: " + exCK.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         panel.add(btnCerradura);
@@ -799,11 +973,26 @@ private JPanel createDefaultCard(String title) {
         btnCerradura.setAlignmentX(CENTER_ALIGNMENT);
         btnCerradura.addActionListener(e -> {
             String auto = (String) comboCerraduraOpcional.getSelectedItem();
-            if (auto != null) {
-                // Lógica de cerradura
-                JOptionPane.showMessageDialog(this, "Cerradura Opcional aplicada a: " + auto, "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            if (auto == null) {
                 JOptionPane.showMessageDialog(this, "Por favor, seleccione un autómata válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            AFN base = afnMap.get(auto);
+            if (base == null) {
+                JOptionPane.showMessageDialog(this, "No se pudo recuperar el autómata '" + auto + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            java.util.List<String> eliminar = java.util.Collections.singletonList(auto);
+            String nuevoNombre = solicitarNombreDisponible(auto + "_opc", eliminar);
+            if (nuevoNombre != null) {
+                try {
+                    AFN resultado = AFN.cerraduraOpcional(base);
+                    removeAFNs(eliminar);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Cerradura opcional", nuevoNombre, resultado);
+                } catch (Exception exOpc) {
+                    JOptionPane.showMessageDialog(this, "No se pudo aplicar la cerradura opcional: " + exOpc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         panel.add(btnCerradura);
@@ -839,11 +1028,16 @@ private JPanel createDefaultCard(String title) {
         btnMostrar.setAlignmentX(CENTER_ALIGNMENT);
         btnMostrar.addActionListener(e -> {
             String auto = (String) comboMostrarAFN.getSelectedItem();
-            if (auto != null) {
-                JOptionPane.showMessageDialog(this, "Se mostrará el gráfico de: " + auto, "Información", JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            if (auto == null) {
                 JOptionPane.showMessageDialog(this, "Por favor, seleccione un autómata válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+            AFN seleccionado = afnMap.get(auto);
+            if (seleccionado == null) {
+                JOptionPane.showMessageDialog(this, "No se pudo recuperar el autómata  + auto + .", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            showAutomataDetails("Detalle de AFN", auto, seleccionado);
         });
         panel.add(btnMostrar);
 
@@ -867,7 +1061,7 @@ private JPanel createDefaultCard(String title) {
         lblAutomata.setAlignmentX(CENTER_ALIGNMENT);
         panel.add(lblAutomata);
 
-        comboMostrarAFD = new JComboBox<>(createdAutomataNames.toArray(new String[0]));
+        comboMostrarAFD = new JComboBox<>(createdAfdNames.toArray(new String[0]));
         comboMostrarAFD.setMaximumSize(new Dimension(200, 30));
         panel.add(comboMostrarAFD);
         panel.add(Box.createVerticalStrut(20));
@@ -878,11 +1072,16 @@ private JPanel createDefaultCard(String title) {
         btnMostrar.setAlignmentX(CENTER_ALIGNMENT);
         btnMostrar.addActionListener(e -> {
             String auto = (String) comboMostrarAFD.getSelectedItem();
-            if (auto != null) {
-                JOptionPane.showMessageDialog(this, "Se mostrará el gráfico de: " + auto, "Información", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Por favor, seleccione un autómata válido.", "Error", JOptionPane.ERROR_MESSAGE);
+            if (auto == null) {
+                JOptionPane.showMessageDialog(this, "Por favor, seleccione un AFD válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+            AFD afd = afdMap.get(auto);
+            if (afd == null) {
+                JOptionPane.showMessageDialog(this, "No se pudo recuperar el AFD '" + auto + "'.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            showAfdDetails("Detalle de AFD", auto, afd);
         });
         panel.add(btnMostrar);
 
@@ -890,6 +1089,7 @@ private JPanel createDefaultCard(String title) {
     }
 
     private void updateAutomataLists() {
+        Collections.sort(createdAutomataNames);
         String[] automataArray = createdAutomataNames.toArray(new String[0]);
         if (comboUnion1 != null) {
             comboUnion1.setModel(new javax.swing.DefaultComboBoxModel<>(automataArray));
@@ -916,8 +1116,226 @@ private JPanel createDefaultCard(String title) {
             comboMostrarAFN.setModel(new javax.swing.DefaultComboBoxModel<>(automataArray));
         }
         if (comboMostrarAFD != null) {
-            comboMostrarAFD.setModel(new javax.swing.DefaultComboBoxModel<>(automataArray));
+            Collections.sort(createdAfdNames);
+            String[] afdArray = createdAfdNames.toArray(new String[0]);
+            comboMostrarAFD.setModel(new javax.swing.DefaultComboBoxModel<>(afdArray));
         }
+    }
+
+    private int calcularTokenParaLexema(String lexema){
+        if(lexema == null || lexema.isEmpty()){
+            return siguienteTokenSecuencial();
+        }
+        boolean soloDigitos = true;
+        boolean soloLetras = true;
+        boolean soloBlancos = true;
+        for(char c : lexema.toCharArray()){
+            if(!Character.isDigit(c)){
+                soloDigitos = false;
+            }
+            if(!Character.isLetter(c)){
+                soloLetras = false;
+            }
+            if(!Character.isWhitespace(c)){
+                soloBlancos = false;
+            }
+        }
+        if(soloDigitos){
+            return 10;
+        }
+        if(soloLetras){
+            return 20;
+        }
+        if(soloBlancos){
+            return 30;
+        }
+        if(lexema.length() == 1){
+            return tokenParaSimbolo(lexema.charAt(0));
+        }
+        return siguienteTokenSecuencial();
+    }
+
+    private int tokenParaSimbolo(char c){
+        return tokenPorSimbolo.computeIfAbsent(c, key -> siguienteTokenSecuencial());
+    }
+
+    private int siguienteTokenSecuencial(){
+        return nextTokenValue++;
+    }
+
+    private void registerAFN(String name, AFN automaton, Integer tokenOverride) {
+        if (name == null || name.isEmpty() || automaton == null) {
+            return;
+        }
+        if(tokenOverride != null){
+            automaton.asignarToken(tokenOverride.intValue());
+        }
+        afnMap.put(name, automaton);
+        if (!createdAutomataNames.contains(name)) {
+            createdAutomataNames.add(name);
+        }
+        updateAutomataLists();
+    }
+
+    private void registerAFD(String name, AFD afd){
+        if(name == null || name.isEmpty() || afd == null){
+            return;
+        }
+        afdMap.put(name, afd);
+        if(!createdAfdNames.contains(name)){
+            createdAfdNames.add(name);
+        }
+        updateAutomataLists();
+    }
+
+    private void removeAFNs(java.util.List<String> nombres){
+        boolean cambio = false;
+        for(String nombre : nombres){
+            if(nombre == null){
+                continue;
+            }
+            AFN eliminado = afnMap.remove(nombre);
+            if(eliminado != null){
+                createdAutomataNames.remove(nombre);
+                cambio = true;
+            }
+        }
+        if(cambio){
+            updateAutomataLists();
+        }
+    }
+
+    private String solicitarNombreDisponible(String sugerencia) {
+        return solicitarNombreDisponible(sugerencia, java.util.Collections.emptyList());
+    }
+
+    private String solicitarNombreDisponible(String sugerencia, java.util.List<String> nombresReservados) {
+        java.util.Set<String> reservados = new java.util.HashSet<>(nombresReservados);
+        String propuesta = sugerencia != null ? sugerencia : "Automata" + (createdAutomataNames.size() + 1);
+        while (true) {
+            String nombre = JOptionPane.showInputDialog(this, "Nombre para el nuevo autómata:", propuesta);
+            if (nombre == null) {
+                return null;
+            }
+            nombre = nombre.trim();
+            if (nombre.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "El nombre no puede estar vacío.", "Error", JOptionPane.ERROR_MESSAGE);
+                continue;
+            }
+            if (!reservados.contains(nombre) && (afnMap.containsKey(nombre) || afdMap.containsKey(nombre))) {
+                JOptionPane.showMessageDialog(this, "Ya existe un autómata con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+                propuesta = nombre + "_1";
+                continue;
+            }
+            return nombre;
+        }
+    }
+
+    private void showAfdDetails(String titulo, String nombre, AFD afd) {
+        if (afd == null) {
+            JOptionPane.showMessageDialog(this, "No hay información disponible para ese AFD.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        AFD.TransitionTable tabla = afd.buildTransitionTable();
+        Object[][] datos = new Object[tabla.rows.size()][tabla.headers.size()];
+        for (int i = 0; i < tabla.rows.size(); i++) {
+            String[] fila = tabla.rows.get(i);
+            for (int j = 0; j < fila.length; j++) {
+                datos[i][j] = fila[j];
+            }
+        }
+        DefaultTableModel modelo = new DefaultTableModel(datos, tabla.headers.toArray(new String[0]));
+        JTable tablaVisual = new JTable(modelo);
+        tablaVisual.setEnabled(false);
+        tablaVisual.setRowHeight(24);
+        JScrollPane scroll = new JScrollPane(tablaVisual);
+        scroll.setPreferredSize(new Dimension(620, 360));
+        JDialog dialogo = new JDialog(this, titulo + ": " + nombre, true);
+        dialogo.getContentPane().setLayout(new BorderLayout());
+        dialogo.getContentPane().add(scroll, BorderLayout.CENTER);
+
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JButton btnGuardar = new RoundedButton("Guardar tabla", 8);
+        btnGuardar.setBackground(COLOR_AZUL_ACCENT);
+        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.addActionListener(ev -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Guardar tabla AFD");
+            chooser.setSelectedFile(new File(nombre + "_tabla.txt"));
+            int opcion = chooser.showSaveDialog(dialogo);
+            if(opcion == JFileChooser.APPROVE_OPTION){
+                File archivo = chooser.getSelectedFile();
+                try {
+                    if(afd.exportTransitionTable(archivo.toPath())){
+                        JOptionPane.showMessageDialog(dialogo, "Tabla guardada en\n" + archivo.getAbsolutePath(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    }else{
+                        JOptionPane.showMessageDialog(dialogo, "No se pudo guardar la tabla.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(dialogo, "Error al guardar la tabla: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        JButton btnGrafo = new RoundedButton("Ver grafo", 8);
+        btnGrafo.setBackground(COLOR_AZUL_ACCENT);
+        btnGrafo.setForeground(Color.WHITE);
+        btnGrafo.addActionListener(ev -> mostrarGrafoAFD(nombre, afd));
+
+        JButton btnCerrar = new RoundedButton("Cerrar", 8);
+        btnCerrar.setBackground(COLOR_AZUL_PRINCIPAL);
+        btnCerrar.setForeground(Color.WHITE);
+        btnCerrar.addActionListener(ev -> dialogo.dispose());
+
+        panelBotones.add(btnGuardar);
+        panelBotones.add(btnGrafo);
+        panelBotones.add(btnCerrar);
+        dialogo.getContentPane().add(panelBotones, BorderLayout.SOUTH);
+
+        dialogo.pack();
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setVisible(true);
+    }
+
+    private void showAutomataDetails(String titulo, String nombre, AFN automata) {
+        if (automata == null) {
+            JOptionPane.showMessageDialog(this, "No hay información disponible para ese autómata.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        JTextArea area = new JTextArea(automata.resumen());
+        area.setEditable(false);
+        area.setLineWrap(false);
+        area.setFont(new Font("Consolas", Font.PLAIN, 14));
+        area.setCaretPosition(0);
+        JScrollPane scroll = new JScrollPane(area);
+        scroll.setPreferredSize(new Dimension(540, 360));
+
+        JDialog dialogo = new JDialog(this, titulo + ": " + nombre, true);
+        dialogo.getContentPane().setLayout(new BorderLayout());
+        dialogo.getContentPane().add(scroll, BorderLayout.CENTER);
+
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JButton btnGrafo = new RoundedButton("Ver grafo", 8);
+        btnGrafo.setBackground(COLOR_AZUL_ACCENT);
+        btnGrafo.setForeground(Color.WHITE);
+        btnGrafo.addActionListener(ev -> mostrarGrafoAFN(nombre, automata));
+
+        JButton btnCerrar = new RoundedButton("Cerrar", 8);
+        btnCerrar.setBackground(COLOR_AZUL_PRINCIPAL);
+        btnCerrar.setForeground(Color.WHITE);
+        btnCerrar.addActionListener(ev -> dialogo.dispose());
+
+        panelBotones.add(btnGrafo);
+        panelBotones.add(btnCerrar);
+        dialogo.getContentPane().add(panelBotones, BorderLayout.SOUTH);
+
+        dialogo.pack();
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setVisible(true);
     }
 
     private void showAutomataDialog(String title, JPanel contentPanel) {
@@ -926,6 +1344,136 @@ private JPanel createDefaultCard(String title) {
         dialog.pack();
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
+    }
+
+    private void mostrarGrafoAFN(String nombre, AFN afn) {
+        mxGraph graph = new mxGraph();
+        Object parent = graph.getDefaultParent();
+        java.util.Map<Estado, Object> vertices = new HashMap<>();
+        graph.getModel().beginUpdate();
+        try {
+            for (Estado estado : afn.getEstados()) {
+                String etiqueta = "q" + estado.getId();
+                if (estado.isAceptacion()) {
+                    etiqueta += "\nT=" + (estado.getToken() >= 0 ? estado.getToken() : "-");
+                }
+                String style = "shape=ellipse;perimeter=ellipsePerimeter;fillColor=#E6F0FF;strokeColor=#3E6FB5;strokeWidth=2;fontColor=#1E335F;";
+                if (estado.isAceptacion()) {
+                    style += "double=1;";
+                }
+                if (afn.getEdoInicial() == estado) {
+                    style += "fillColor=#FFF4CC;strokeColor=#F5A201;";
+                }
+                Object v = graph.insertVertex(parent, null, etiqueta, 0, 0, 90, 50, style);
+                vertices.put(estado, v);
+            }
+            for (Estado estado : afn.getEstados()) {
+                for (Transicion t : estado.getTransiciones()) {
+                    Object origen = vertices.get(estado);
+                    Object destino = vertices.get(t.EdoDestino);
+                    String etiqueta = etiquetaTransicion(t.simboloInf, t.simboloSup);
+                    graph.insertEdge(parent, null, etiqueta, origen, destino);
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+        }
+        mxHierarchicalLayout layout = new mxHierarchicalLayout(graph);
+        layout.setOrientation(mxHierarchicalLayout.ORIENTATION_WEST);
+        layout.execute(parent);
+        mostrarGrafoEnDialogo("AFN: " + nombre, graph);
+    }
+
+    private void mostrarGrafoAFD(String nombre, AFD afd) {
+        mxGraph graph = new mxGraph();
+        Object parent = graph.getDefaultParent();
+        java.util.Map<Integer, Object> vertices = new HashMap<>();
+        graph.getModel().beginUpdate();
+        try {
+            for (int i = 0; i < afd.getNumEdos(); i++) {
+                EdoAFD edo = afd.getEstado(i);
+                String etiqueta = "S" + i;
+                if (edo.token >= 0) {
+                    etiqueta += "\nT=" + edo.token;
+                }
+                String style = "shape=ellipse;perimeter=ellipsePerimeter;fillColor=#E6F0FF;strokeColor=#1E3C72;strokeWidth=2;fontColor=#1E335F;";
+                if (edo.esAceptacion) {
+                    style += "double=1;";
+                }
+                Object v = graph.insertVertex(parent, null, etiqueta, 0, 0, 90, 50, style);
+                vertices.put(i, v);
+            }
+            java.util.List<Character> simbolos = afd.getSimbolos();
+            for (int i = 0; i < afd.getNumEdos(); i++) {
+                EdoAFD edo = afd.getEstado(i);
+                java.util.Map<Integer, java.util.LinkedHashSet<String>> destinos = new java.util.LinkedHashMap<>();
+                for (char c : simbolos) {
+                    int destino = edo.TransAFD[c & 0xFF];
+                    if (destino >= 0) {
+                        destinos.computeIfAbsent(destino, k -> new java.util.LinkedHashSet<>()).add(etiquetaTransicion(c, c));
+                    }
+                }
+                Object origen = vertices.get(i);
+                for (java.util.Map.Entry<Integer, java.util.LinkedHashSet<String>> entry : destinos.entrySet()) {
+                    Object destino = vertices.get(entry.getKey());
+                    String etiqueta = String.join("/", entry.getValue());
+                    graph.insertEdge(parent, null, etiqueta, origen, destino);
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+        }
+        mxHierarchicalLayout layout = new mxHierarchicalLayout(graph);
+        layout.setOrientation(mxHierarchicalLayout.ORIENTATION_WEST);
+        layout.execute(parent);
+        mostrarGrafoEnDialogo("AFD: " + nombre, graph);
+    }
+
+    private void mostrarGrafoEnDialogo(String titulo, mxGraph graph) {
+        mxGraphComponent component = new mxGraphComponent(graph);
+        component.setConnectable(false);
+        component.getGraphControl().setBackground(Color.WHITE);
+        JDialog dialogo = new JDialog(this, titulo, true);
+        dialogo.getContentPane().setLayout(new BorderLayout());
+        dialogo.getContentPane().add(component, BorderLayout.CENTER);
+
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        JButton btnCerrar = new RoundedButton("Cerrar", 8);
+        btnCerrar.setBackground(COLOR_AZUL_PRINCIPAL);
+        btnCerrar.setForeground(Color.WHITE);
+        btnCerrar.addActionListener(ev -> dialogo.dispose());
+        panel.add(btnCerrar);
+        dialogo.getContentPane().add(panel, BorderLayout.SOUTH);
+
+        dialogo.setSize(800, 600);
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setVisible(true);
+    }
+
+    private String etiquetaTransicion(char simboloInf, char simboloSup) {
+        String etiquetaInf = simboloATexto(simboloInf);
+        String etiquetaSup = simboloATexto(simboloSup);
+        if (simboloInf == simboloSup) {
+            return etiquetaInf;
+        }
+        return etiquetaInf + "-" + etiquetaSup;
+    }
+
+    private String simboloATexto(char c) {
+        if (c == SimbEspeciales.EPSILON) {
+            return "ε";
+        }
+        if (Character.isWhitespace(c)) {
+            return "S";
+        }
+        if (Character.isDigit(c)) {
+            return "D";
+        }
+        if (Character.isLetter(c)) {
+            return "L";
+        }
+        return Character.toString(c);
     }
 
     private ImageIcon loadIcon(String iconName) {

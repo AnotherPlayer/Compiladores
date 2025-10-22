@@ -581,3 +581,538 @@ public void SaveAFD( string NombArchivo ){
 	
 
 }
+
+# Análisis didáctico descendente
+
+bool SintaxEqrAritm(){
+
+	int token;
+	
+	if( E() ){
+	
+		token = Lexc.yylex();
+		if( token == 0 )
+			return true;
+	}
+	
+	return false;
+
+}
+
+bool E(){
+
+	if( T() )
+		if( Ep() )
+			return true;
+			
+	return false;
+
+}
+
+bool Ep(){
+
+	int token;
+	token = lexic.yylex();
+	
+	if( (token == Tokens.suma) || (token = Tokens.resta) ){
+		if( T() )
+			if( Ep() )
+				return true;
+		
+		return false;
+	}
+	
+	Lexic.UndoToken():
+	return true;
+
+}
+
+bool T(){
+
+	if( F() )
+		if( Tp() )
+			return true;
+
+	return false;
+	
+}
+
+bool Tp(){
+
+	int token;
+	token = Lexic.yylex();
+	
+	if( (token == Tokens.PROD) || (token = Tokens.DIV) ){
+		if( F() )
+			if( TP() )
+				return true;
+					
+	return false;
+	}
+		
+	Lexic.UndoToken();
+	return true;
+
+}
+
+bool F(){
+
+	int token;
+	token = Lexic.yylex();
+	
+	switch(token){
+	
+		case TOKENS.PAR_F:
+			if( E() ){
+				token = Lexic.yylex();
+				if( TOKENS.PAR_D )
+					return true;
+			}
+		break;
+			
+		case TOKENS.NUM
+			return true;
+	}
+	
+	return false;
+
+}
+
+# Analizador descendente recursivo
+
+// E
+bool E(AFN f){
+
+	if( T(f) )
+		if( Ep(f) )
+			return true;
+			
+	return false;
+}
+// E'
+bool Ep(AFN f){
+
+	int token;
+	AFN f2 = new AFN();
+	
+	token = lexic.yylex();
+	
+	if( token == 10 ){
+		if( T( f() ) ){
+			f = f.union(f2)
+			if( Ep(f) )
+				return true;
+				
+			}
+		return false;
+	}
+	
+	lexic.undoToken();
+	return true;
+
+}
+
+// T
+bool T(AFN f){
+
+	if( C(f) )
+		if( Tp(f) )
+			return true;
+			
+	return false;
+}
+// T'
+bool Tp(AFN f){
+
+	int token;
+	AFN f2 = new AFN();
+	
+	token = lexic.yylex();
+	
+	if( token == 20 ){
+		if( C( f() ) ){
+			f = f.conc(f2)
+			if( Tp(f) )
+				return true;
+				
+			}
+		return false;
+	}
+
+	lexic.undoToken();
+	return true;
+
+}
+
+// C
+bool C(AFN f){
+
+	if( F(f) )
+		if( Cp(f) )
+			return true;
+			
+	return false;
+}
+// C'
+bool Cp(AFN f){
+
+	int token;
+	
+	token = lexic.yylex();
+	
+	switch(token){
+		case 30:
+			f.CERR.POST();
+			break;
+
+		case 40:
+			f.CERR_KLEEN();
+			break;
+		case 50:
+			f.Opc();
+			break;
+			
+		default:
+			lexic.undoToken();
+			return true;
+	
+	}
+
+	return Cp(f);
+
+}
+
+bool F(AFN f){
+
+	char simb1, simb2;
+	int token;
+	token = lexic.yylex();
+	
+	switch( token ){
+	
+	case 60:
+		if( E(f) ){
+			token = lexic.yylex();
+			if(token == 70)
+				return true;
+		}
+		return false;
+//		break;
+
+	case 80:
+		simb1 = lexic.yytext[0];
+		f.CrearBasico(simb1)
+		return true;
+//		break;
+		
+	case 90:
+		token = lexic.yylex();
+		if( token == 80 ){
+			simb1 = lexic.yytext[0];
+			token = yylex();
+			if( token == 110 ){
+				token = lexic.yylex();
+				if( token == 60 )
+					simb2 = lexic.yytext[0];
+					token = lexic.yylex();
+					if( token == 100 ){
+						f.CrearBasico( simb1,simb2 )
+						return true;
+					}
+				}
+			}
+	//	break;
+		}
+		return false;
+
+}
+return false;
+
+# Clase simboloG
+class SimbolG{
+
+	String NombSimb; //V_T y V_N
+	int token;
+	bool esTerminal;
+
+}
+
+# Lado Izquierdo
+class LadoIzq{
+
+	SimbolG SimbIzq;
+	List<SimbolG> LadoDerecho;
+	
+}
+
+# Gramática
+class Gramatica{
+
+	int numReglas;
+	LadoIzq[] Reglas;
+	Conjunto<SimbolG> Vn; //Puden ser conjunto de SímbolosG en lugar de String
+	Conjunto<SimbolG> Vt; //Puden ser conjunto de SímbolosG en lugar de String
+	SimbolG SimbIni;
+
+	//Operación first
+	Conjunto<SimbolG> First( list<SimbolG> l ){
+
+		Conjunto<SimbolG> R = new Conjunto<SimbolG>();
+		R.clear();
+	
+		//Criterio para detener recursión
+		if( l[0].esTerminal ){
+	
+			R.add(l[0]);
+			return R;
+	
+		}
+	
+		for( int i=0 ; i<numReglas ; i++ ){
+			if( Reglas[i].SimbIzq.NombSimb == l[0].NombSimb )
+				R.union( First( Reglas[i].LadoDerecho ) );
+			
+		if( R.contiene( simbolo.EPSILON ) ){
+			if( l.count() == 1 )
+				return R;
+			R.union( First( l.sublist( 1,l.count()-1 ) ) );
+		
+		}
+	
+		return R;	
+
+		}
+	}
+
+	Conjunto<SimbolG> Follow( SimbolG s ){
+
+	Conjunto<SimbolG> R = new Conjunto<SimbolG>();
+	Conjunto<SimbolG> aux = new Conjunto<SimbolG>();
+	int j;
+	
+	R.clear();
+	//aux.clear();//??
+	
+	if( s.esTerminal )
+		return R;
+	
+	//Buscar "s" en los lados derechos
+	for( int i=0 ; i<numReglas ; i++ ){
+		
+		j = Reglas[i].LadoDerecho.indexOf(s);
+	
+		if( j == -1 )
+			continue;
+		
+		if( j == (Reglas[i],LadoDerecho.count()-1) ){
+		
+			if( s == Reglas[i].SimbIzq )
+				continue;
+				
+			R.union( Follow( Reglas[i].SimbIzq ) );
+			continue;
+		
+		}
+		
+		aux.clear();//??
+		
+		aux = First( Reglas[i].LadoDerecho.sublist( j,Reglas[i].LadoDerecho.count()-j ) );
+		
+		if( aux.contiene(simbolo.EPSILON) ){
+			aux = aux.remove{simbolo.EPSILON};//aux - {epsilon}
+			R.union(aux);
+			R.union( Follow() );
+		}
+	
+	}
+	
+}
+
+}
+
+# Generación de reglas
+
+bool G(){
+
+	if( Reglas() )
+		return true;
+		
+	return false;
+
+}
+
+bool Reglas( int token ){
+
+	if( Regla() ){
+	
+		token = Lexic.yylex();
+		if( token == PUNTO_COMA )
+			if( ReglasP() )
+				return true;
+		
+		return false;
+	
+	}
+
+}
+
+bool ReglasP(  ){
+
+	int token;
+	statusLexic EdoLexic;
+	
+	EdoLexic = Lexic.GetEdo();
+	
+	if( Regla() ){
+	
+		token = Lexic.yylex();
+		if( token == PUNTO_COMA )
+			if( ReglasP() )
+				return true;
+			
+			return false;
+	
+	}
+
+	Lexic.SetEdo(EdoLexic) //Epsilon
+
+	return true;
+
+}
+
+bool Regla(  ){
+
+	String LexemaLadoIzq;
+	int token;
+	
+	if( LadoIzq( ref LexemaLadoIzq ) ){
+	
+		token = Lexic.yylex();
+		if( token == FLECHA )
+			if( LadosDerecho(LexemaLadoIzq) )
+				return true;
+	
+	}
+
+	return false;
+
+}
+
+bool LadoIzq( String LadoIzq ){
+
+	SimbolG s = new SimbolG();
+	int token;
+
+	token = Lexic.yylex();
+	
+	if( token == SIMBOLO ){
+	
+		S.NumSimb = Lexic.yytext;
+		S.esTerminal = False;
+		
+		Vn.add(s);
+		LexemaLadoIzq = Lexic.yytext;
+		
+		return true;
+	
+	}
+	
+	return false;
+
+}
+
+bool LadosDerecho( String LexemaLaodoIzq ){
+
+	if( LadoDerecho( LexemaLadoIzq ) )
+		if( LadosDerechosP( LexemaLadoIzq ) )
+			return true;
+			
+		return false;
+
+}
+
+bool LadosDerechosP( String LexemaLadoIzq ){
+
+	int token;
+	token = Lexic.yylex();
+	
+	if( token == OR )
+		if( LadoDerecho( LexemaLadoIzq ) ) {
+			if( LadosDerechosP( LexemaLadoIzq ) )
+				return true;
+			
+			return false;
+		}
+		
+		Lexic.UndoToken();
+		return true;
+
+}
+
+bool LadoDerecho( String LexemaLadoIzq ){
+
+	list<SimbolG> l = new list<SimbolG>();
+	SimbolG s = new SimbolG();
+	
+	l.clear();
+	
+	if( SecSimbolos(l) ){
+	
+		s.esTerminal = false;
+		s.NumSimb = LexemaLadoIzq;
+		
+		AnReglas[NumReglas].SimbIzq = s;     //??
+		AnReglas[NumReglas].LadoDerecho = l; //??
+		NumReglas++;
+		return true;
+	
+	}
+	
+	return false;
+
+}
+
+bool SecSimbolos( list<SimbolG> l ){
+
+	int token;
+	SimbolG s;
+	
+	token = Lexic.yylex();
+	
+	if( token == SIMBOLO )
+		s = new SimbolG();
+		s.NombSimb = Lexic.yytext;
+		
+		if( SecSimbolosP(l) ){
+			l.addInicio(S);
+			return true;
+		}
+		
+		return false;
+		
+}
+
+bool SecSimbolosP( list<SimbolG> l ){
+
+	int token;
+	SimbolG s;
+	
+	token = Lexic.yylex();
+	
+	if( token == SIMBOLO ) {
+		s = new SimbolG();
+		s.NombSimb = Lexic.yytext;
+		
+		if( SecSimbolosP(l) ){
+			l.addInicio(S);
+			return true;
+		}
+		
+		return false;
+		
+	}
+		
+	Lexic.UnodToken(); //Epsilon
+	return true;
+
+}

@@ -1,42 +1,34 @@
-package BackEnd;
 
+// Clase Transicion según pseudocódigo líneas 373-400
 public class Transicion {
 
-    public char simboloInf;
-    public char simboloSup;
-    public Estado EdoDestino;
+    char SimboloInf;  // Simbolo_inferior en pseudocódigo
+    char SimboloSup;  // Simbolo_superior en pseudocódigo
+    Estado EdoDestino;
 
-    public Transicion(){
-
+    Transicion(){
         EdoDestino = null;
-
     }
 
-    public Transicion( char c,Estado e ){
-
-        simboloSup = simboloInf = c;
+    Transicion(char c, Estado e){
+        SimboloInf = SimboloSup = c;
         EdoDestino = e;
-
     }
 
-    public Transicion( char cInf,char cSup,Estado e ){
-
-        simboloSup = cSup;
-        simboloInf = cInf;
+    Transicion(char c_inf, char c_sup, Estado e){
+        SimboloInf = c_inf;
+        SimboloSup = c_sup;
         EdoDestino = e;
-
     }
 
-    public int clear(){
-
-        if( this.EdoDestino != null ){
+    // Método clear no está en el pseudocódigo pero lo dejamos por si se necesita
+    int clear(){
+        if(this.EdoDestino != null){
             this.EdoDestino = null;
-            this.simboloInf = this.simboloSup = '\0';
+            this.SimboloInf = this.SimboloSup = '\0';
             return 1; //Se realizó la limpieza
         }
-
         return 0;
-
     }
 
     

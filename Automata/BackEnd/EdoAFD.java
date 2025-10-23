@@ -1,19 +1,24 @@
-package BackEnd;
-
+// Clase EdoAFD según pseudocódigo líneas 445-469
 public class EdoAFD {
 
-    public int[] TransAFD;
-	public int Id;            //--> En caso de usar conjuntos
-	public int token;
-    public boolean esAceptacion;
-	
-	public EdoAFD(){
-		TransAFD = new int[257];
-		Id = -1;
-		token = -1;
-        esAceptacion = false;
-		for( int i=0 ; i<=256 ; i++ )
-			TransAFD[i] = -1;
-	}
+    int[] transAFD;  // TransAFD en pseudocódigo - tabla de 257 posiciones (0-256 para ASCII extendido)
+    int ID;          // ID en pseudocódigo - En caso de usar conjuntos
+    int Token;
+    
+    EdoAFD(){
+        transAFD = new int[257];
+        ID = -1;
+        Token = -1;
+        for(int i = 0; i <= 256; i++)
+            transAFD[i] = -1;
+    }
+
+    EdoAFD(int idEdo){
+        transAFD = new int[257];
+        ID = idEdo;
+        Token = -1;
+        for(int i = 0; i <= 256; i++)
+            transAFD[i] = -1;
+    }
     
 }

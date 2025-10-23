@@ -1,90 +1,32 @@
-package BackEnd;
 import java.util.ArrayList;
 
 public class Estado {
 
     int IdEdo;
     boolean EdoAcept;
-    int token;
-
-    ArrayList<Transicion> transiciones;
+    int Token;  
+    ArrayList<Transicion> Transiciones; 
     static int NumEstados = 0;
 
-    public Estado(){
-
+    Estado(){
         IdEdo = NumEstados++;
         EdoAcept = false;
-        token = -1;
-        transiciones = new ArrayList<Transicion>();
-
+        Token = -1;
+        Transiciones = new ArrayList<Transicion>();
+        Transiciones.clear();
     }
 
-    public int getId(){
-        return IdEdo;
-    }
+    // Método TieneTransicion del pseudocódigo (línea 403-414)
+    ArrayList<Estado> TieneTransicion(char c){
+        ArrayList<Estado> R = new ArrayList<Estado>();
+        R.clear();
 
-    public boolean isAceptacion(){
-        return EdoAcept;
-    }
-
-    public void setAceptacion(boolean aceptacion){
-        this.EdoAcept = aceptacion;
-    }
-
-    public int getToken(){
-        return token;
-    }
-
-    public void setToken(int token){
-        this.token = token;
-    }
-
-    public ArrayList<Transicion> getTransiciones(){
-        return transiciones;
-    }
-
-    public Estado tieneTransition( char c ){
-
-        for(Transicion t : transiciones){
-            if(t.simboloInf <= c && c <= t.simboloSup){
-                return t.EdoDestino;
-            }
+        for(Transicion t : this.Transiciones){
+            if(t.SimboloInf <= c && c <= t.SimboloSup)
+                R.add(t.EdoDestino);
         }
 
-        return null;
-        
-    }
-    
-    public void clear(){
-        
-        IdEdo = -1;
-        EdoAcept = false;
-        token = -1;
-        transiciones.clear();
-
-    }
-
-    public void addTransicion(Transicion transicion){
-        if(transicion != null){
-            transiciones.add(transicion);
-        }
-    }
-
-    public void add( Estado e ){
-
-        if(e == null){
-            return;
-        }
-
-        for(Transicion t : e.transiciones){
-            transiciones.add(t);
-        }
-        this.EdoAcept = this.EdoAcept || e.EdoAcept;
-
-        if(this.token < 0){
-            this.token = e.token;
-        }
-
+        return R;
     }
     
 }

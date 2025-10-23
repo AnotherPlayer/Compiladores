@@ -1,19 +1,17 @@
-package BackEnd;
-
 import java.util.ArrayList;
 
 public class Alfabeto {
 
-    private final ArrayList<Character> simbolos;
+    ArrayList<Character> simbolos;
 
-    public Alfabeto(){
+    Alfabeto(){
 
         simbolos = new ArrayList<Character>();
         simbolos.clear();
 
     }
     
-    public void union(Alfabeto a){
+    void union( Alfabeto a ){
 
         for (Character c : a.simbolos)
             if (!this.simbolos.contains(c))
@@ -21,13 +19,13 @@ public class Alfabeto {
 
     }
     
-    public void clear(){
+    void clear(){
 
         simbolos.clear();
 
     }
     
-    public boolean add(char c){
+    boolean add( char c ){
 
         if( simbolos.add(c) )
             return true;
@@ -36,16 +34,5 @@ public class Alfabeto {
 
     }
 
-    public boolean contains(char c){
-        return simbolos.contains(c);
-    }
-
-    public int size(){
-        return simbolos.size();
-    }
-
-    public ArrayList<Character> asList(){
-        return new ArrayList<Character>(simbolos);
-    }
-
 }
+

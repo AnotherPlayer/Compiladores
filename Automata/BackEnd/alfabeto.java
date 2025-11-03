@@ -1,17 +1,17 @@
 import java.util.ArrayList;
 
-public class Alfabeto {
+public class alfabeto {
 
     ArrayList<Character> simbolos;
 
-    Alfabeto(){
+    alfabeto(){
 
         simbolos = new ArrayList<Character>();
         simbolos.clear();
 
     }
     
-    void union( Alfabeto a ){
+    void union( alfabeto a ){
 
         for (Character c : a.simbolos)
             if (!this.simbolos.contains(c))

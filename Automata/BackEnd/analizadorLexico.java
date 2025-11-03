@@ -19,7 +19,7 @@ public class analizadorLexico {
         String texto;
         int inicio;
         int fin;
-
+        //Templates para la facilitacion de codigo
         EstadoAnalisis(int idx, int tk, String txt, int ini, int f){
             indice = idx;
             token = tk;
@@ -148,12 +148,11 @@ public class analizadorLexico {
             // Si no se encontró lexema válido, avanzar uno y devolver error
             if(IndiceCaracterActual < CadenaSigma.length()){
                 yytext = String.valueOf(CadenaSigma.charAt(IndiceCaracterActual));
-                System.out.println("Error Léxico: carácter inválido '" + yytext +
-                                 "' en posición " + IndiceCaracterActual);
+                System.out.println("Error Léxico: carácter inválido '" + yytext + "' en posición " + IndiceCaracterActual);
                 IniLexema = IndiceCaracterActual;
                 FinLexema = IndiceCaracterActual;
                 IndiceCaracterActual++;
-                Token = -1;
+                Token = -1; 
             }
             return -1;  // Error
         }
@@ -181,8 +180,7 @@ public class analizadorLexico {
         int token;
         while((token = yylex()) != -1){
             if(token > 0){
-                System.out.println("Token: " + token + " | Lexema: \"" + yytext +
-                                 "\" | Posición: [" + IniLexema + "," + FinLexema + "]");
+                System.out.println("Token: " + token + " | Lexema: \"" + yytext + "\" | Posición: [" + IniLexema + "," + FinLexema + "]");
             }
         }
 

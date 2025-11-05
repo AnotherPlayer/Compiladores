@@ -1,4 +1,3 @@
-
 // Clase Transicion según pseudocódigo líneas 373-400
 public class Transicion {
 

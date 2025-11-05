@@ -1,7 +1,5 @@
 import java.util.ArrayList;
 import java.util.Stack;
-import java.util.Queue;
-import java.util.LinkedList;
 
 // Clase AFN según pseudocódigo líneas 39-226
 public class AFN {

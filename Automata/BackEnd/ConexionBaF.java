@@ -1,6 +1,5 @@
 import java.util.HashMap;
 import java.util.ArrayList;
-import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -33,9 +32,6 @@ public class ConexionBaF {
     // El analizador léxico que usará el AFD actual para analizar cadenas
     private analizadorLexico analizador;
 
-    // Contador para generar IDs únicos (no se usa actualmente)
-    private int contadorID;
-
     /**
      * CONSTRUCTOR
      * Inicializa todas las estructuras de datos vacías
@@ -44,7 +40,6 @@ public class ConexionBaF {
         automatasAFN = new HashMap<>();     // Crea mapa vacío para AFNs
         automatasAFD = new HashMap<>();     // Crea mapa vacío para AFDs
         analizador = new analizadorLexico(); // Crea analizador léxico
-        contadorID = 1;                      // Inicia contador en 1
         afdActual = null;                    // No hay AFD seleccionado al inicio
     }
 
@@ -285,7 +280,7 @@ public class ConexionBaF {
             // OBTENER AFN
             AFN afn = automatasAFN.get(nombreAFN);
 
-            // CONVERTIR (⚠️ ESTE MÉTODO NO EXISTE EN AFD.java)
+            // CONVERTIR (ESTE MÉTODO NO EXISTE EN AFD.java)
             AFD afd = AFD.AFNtoAFD(afn);  // ← DEBERÍA ESTAR EN EL PSEUDOCÓDIGO
 
             // GUARDAR AFD
@@ -324,7 +319,7 @@ public class ConexionBaF {
             }
 
             // CONVERTIR A AFD
-            afdActual = AFD.AFNtoAFD(afnUnido);  // ⚠️ NO EXISTE
+            afdActual = AFD.AFNtoAFD(afnUnido);  //NO EXISTE
             analizador.setAutomata(afdActual);
 
             // GUARDAR
@@ -532,7 +527,6 @@ public class ConexionBaF {
         automatasAFN.clear();     // Vacía HashMap de AFNs
         automatasAFD.clear();     // Vacía HashMap de AFDs
         afdActual = null;         // Quita AFD actual
-        contadorID = 1;           // Reinicia contador
     }
 
     /**

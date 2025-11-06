@@ -77,6 +77,7 @@ public class analizadorLexico {
 
         int longitud_valida = 0;
         int token_valido = -1;
+        @SuppressWarnings("unused")
         int ultimo_estado_valido = -1;
 
         // Procesar caracteres mientras sea posible

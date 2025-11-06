@@ -41,7 +41,7 @@ public class AnaDescRecCalculadora {
 
         if( token == 10 ){ // Token == '+'
             if( T(f) ){
-                //f.union(f2);
+				f.AFN_union(f2);
                 if(Ep(f))
                     return true;
             }
@@ -75,7 +75,7 @@ public class AnaDescRecCalculadora {
 	
 	    if( token == 20 ){
     		if( C(f) ){
-			    //f = f.concatenar(f2);
+			    f.AFN_join(f2);
 			    if( Tp(f) )
 				    return true;
 				
@@ -111,15 +111,15 @@ public class AnaDescRecCalculadora {
         switch(token){
             
 		    case 30:
-		    	//f.CERR.POST();
+		    	f.AFN_cerrPos();
 		    break;
 
 		    case 40:
-		    	//f.CERR_KLEEN();
+		    	f.AFN_cerrKleene();
 		    break;
-		    case 50:
 
-		    	//f.Opc();
+		    case 50:
+		    	f.AFN_opcional();
 		    break;
             
 		    default:

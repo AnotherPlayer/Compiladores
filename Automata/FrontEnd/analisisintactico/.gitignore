@@ -1,0 +1,18 @@
+# NetBeans specific files for this subproject
+nbproject/private/
+build/
+dist/
+.nbattrs
+nb-configuration.xml
+
+# Maven specific files (if using Maven)
+target/
+
+# Java class files
+*.class
+
+# Jar files
+*.jar
+
+# Log files
+*.log

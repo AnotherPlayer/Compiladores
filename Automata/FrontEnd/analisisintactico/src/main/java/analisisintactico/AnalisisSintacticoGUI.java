@@ -70,7 +70,7 @@ public class AnalisisSintacticoGUI extends JFrame {
         menuItemCerraduraPositivaAFN.addActionListener(e -> abrirDialogAFN("Cerradura +"));
         menuItemCerraduraKleeneAFN.addActionListener(e -> abrirDialogAFN("Cerradura *"));
         menuItemOpcionalAFN.addActionListener(e -> abrirDialogAFN("Opcional"));
-        menuItemERtoAFN.addActionListener(e -> abrirDialogAFN("ER->AFN"));
+        menuItemERtoAFN.addActionListener(e -> abrirDialogERtoAFN());
         menuItemUnionAnalizadorLexico.addActionListener(e -> abrirDialogAFN("Unión para Analizador Léxico"));
         menuItemAFNtoAFD.addActionListener(e -> abrirDialogAFN("Convertir AFN a AFD"));
         menuItemAnalizarCadena.addActionListener(e -> abrirDialogAFN("Analizar una cadena"));
@@ -99,7 +99,7 @@ public class AnalisisSintacticoGUI extends JFrame {
         
         menuDescRecGramdeGram = new JMenu("Descenso Rec Gramática de Gramáticas");
         menuItemAbrirGramatica = new JMenuItem("Abrir Gramática");
-        menuItemAbrirGramatica.addActionListener(e -> abrirDialogAnalisisSintactico("Gramática de Gramáticas"));
+        menuItemAbrirGramatica.addActionListener(e -> abrirDialogGramaticaGramaticas());
         menuDescRecGramdeGram.add(menuItemAbrirGramatica);
         
         menuAnalisisLL1 = new JMenu("Análisis LL(1)");
@@ -137,7 +137,7 @@ public class AnalisisSintacticoGUI extends JFrame {
         panelContenidoPrincipal = new JPanel(new BorderLayout());
         panelContenidoPrincipal.setBackground(Color.WHITE);
         
-        JLabel lblBienvenida = new JLabel("Bienvenido al Analizador Sintáctico", SwingConstants.CENTER);
+        JLabel lblBienvenida = new JLabel("Bienvenido al Análisis Sintáctico", SwingConstants.CENTER);
         lblBienvenida.setFont(new Font("Arial", Font.BOLD, 24));
         lblBienvenida.setForeground(new Color(60, 60, 60));
         panelContenidoPrincipal.add(lblBienvenida, BorderLayout.CENTER);
@@ -167,6 +167,28 @@ public class AnalisisSintacticoGUI extends JFrame {
         PanelCalculadora panelCalc = new PanelCalculadora();
         
         dialog.add(panelCalc);
+        dialog.setVisible(true);
+    }
+    
+    private void abrirDialogERtoAFN() {
+        JDialog dialog = new JDialog(this, "ER -> AFN", true);
+        dialog.setSize(650, 400);
+        dialog.setLocationRelativeTo(this);
+        
+        PanelERtoAFN panelER = new PanelERtoAFN();
+        
+        dialog.add(panelER);
+        dialog.setVisible(true);
+    }
+    
+    private void abrirDialogGramaticaGramaticas() {
+        JDialog dialog = new JDialog(this, "Gramática de Gramáticas", true);
+        dialog.setSize(900, 650);
+        dialog.setLocationRelativeTo(this);
+        
+        PanelGramaticaGramaticas panelGram = new PanelGramaticaGramaticas();
+        
+        dialog.add(panelGram);
         dialog.setVisible(true);
     }
     

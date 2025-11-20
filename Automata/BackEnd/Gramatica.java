@@ -20,7 +20,7 @@ public class Gramatica {
         SimbIni = null;
 
     }
-
+    //Devulve una sublista entre los indices a y b
     ArrayList<SimbolG> subLista( ArrayList<SimbolG> l,int a, int b){
 
         ArrayList<SimbolG> X = new ArrayList<SimbolG>();

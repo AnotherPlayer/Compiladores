@@ -5,12 +5,6 @@ dist/
 .nbattrs
 nb-configuration.xml
 
-# Maven specific files (if using Maven)
-target/
-
-# Java class files
-*.class
-
 # Jar files
 *.jar
 

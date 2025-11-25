@@ -109,7 +109,7 @@ public class AnalisisSintacticoGUI extends JFrame {
         
         menuAnalisisSLR = new JMenu("Análisis SLR");
         menuItemAbrirSLR = new JMenuItem("Abrir SLR");
-        menuItemAbrirSLR.addActionListener(e -> abrirDialogAnalisisSintactico("Análisis SLR"));
+        menuItemAbrirSLR.addActionListener(e -> abrirDialogAnalisisLR0());
         menuAnalisisSLR.add(menuItemAbrirSLR);
         
         menuAnalisisLRCanonico = new JMenu("Análisis LR Canónico");
@@ -189,6 +189,17 @@ public class AnalisisSintacticoGUI extends JFrame {
         PanelGramaticaGramaticas panelGram = new PanelGramaticaGramaticas();
         
         dialog.add(panelGram);
+        dialog.setVisible(true);
+    }
+    
+    private void abrirDialogAnalisisLR0() {
+        JDialog dialog = new JDialog(this, "Análisis SLR/LR Canónico (LR0)", true);
+        dialog.setSize(1200, 800); 
+        dialog.setLocationRelativeTo(this);
+        
+        PanelAnalisisLR0 panelAnLR0 = new PanelAnalisisLR0(); 
+        
+        dialog.add(panelAnLR0);
         dialog.setVisible(true);
     }
     

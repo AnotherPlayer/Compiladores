@@ -1,3 +1,5 @@
+//1° parcial
+
 // Clase EdoAFD según pseudocódigo líneas 445-469
 public class EdoAFD {
 

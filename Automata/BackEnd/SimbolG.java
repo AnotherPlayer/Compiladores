@@ -1,3 +1,5 @@
+//2° parcial
+
 public class SimbolG {
     
     String NombSimb; //V_T y V_N

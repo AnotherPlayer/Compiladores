@@ -1,3 +1,5 @@
+//1° parcial
+
 public class simbEspeciales {
 
     public static char EPSILON = (char)5;

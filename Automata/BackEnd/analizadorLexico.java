@@ -1,3 +1,5 @@
+//2° parcial
+
 import java.util.Stack;
 
 // Clase analizadorLexico con método yylex según pseudocódigo líneas 586-650

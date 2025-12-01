@@ -1,4 +1,6 @@
-// Clase Transicion según pseudocódigo líneas 373-400
+//1° parcial
+
+// Clase Transicion según pseudocódigo líneas 373-4002
 public class Transicion {
 
     char SimboloInf;  // Simbolo_inferior en pseudocódigo

@@ -1,3 +1,5 @@
+//2° parcial
+
 import java.util.ArrayList;
 
 // Clase ElemSj según pseudocódigo líneas 427-441

@@ -6,7 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-public class PanelAnalisisLR0 extends JPanel {
+public class PanelAnalisisLL1 extends JPanel {
 
 	private File archivoAFDLexico;
 	private JTextArea areaGramatica;
@@ -15,14 +15,14 @@ public class PanelAnalisisLR0 extends JPanel {
 	private JButton btnSeleccionarAfdLexico;
 	private JButton btnProbarLexico;
 	private JButton btnAsignarTokens;
+	private JButton btnAnalizarSintacticamente;
 	private JTable tablaNoTerminal;
 	private JTable tablaTerminalToken;
-	private JTable tablaItems;
-	private JTable tablaLR;
+	private JTable tablaLL1;
 	private JTable tablaLexemaToken;
-	private JTable tablaPilaCadenaAccion;
+	private JTable tablaPilaCadena;
 
-	public PanelAnalisisLR0() {
+	public PanelAnalisisLL1() {
 		inicializarComponentes();
 		inicializarModelosTablas();
 	}
@@ -41,53 +41,48 @@ public class PanelAnalisisLR0 extends JPanel {
 		JPanel panelGramatica = crearPanelGramatica();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
-		gbc.weightx = 0.20;
-		gbc.weighty = 0.25;
+		gbc.weightx = 0.25;
+		gbc.weighty = 0.30;
 		gbc.gridheight = 1;
 		panelPrincipal.add(panelGramatica, gbc);
 
 		JPanel panelCentroSuperior = crearPanelCentroSuperior();
 		gbc.gridx = 1;
 		gbc.gridy = 0;
-		gbc.weightx = 0.45;
-		gbc.weighty = 0.25;
+		gbc.weightx = 0.40;
+		gbc.weighty = 0.30;
 		panelPrincipal.add(panelCentroSuperior, gbc);
 
 		JPanel panelDerechaSuperior = crearPanelDerechaSuperior();
 		gbc.gridx = 2;
 		gbc.gridy = 0;
 		gbc.weightx = 0.35;
-		gbc.weighty = 0.25;
+		gbc.weighty = 0.30;
 		panelPrincipal.add(panelDerechaSuperior, gbc);
 
-		JPanel panelItems = crearPanelItems();
+		JPanel panelTablaLL1 = crearPanelTablaLL1();
 		gbc.gridx = 0;
 		gbc.gridy = 1;
-		gbc.weightx = 0.20;
-		gbc.weighty = 0.40;
-		panelPrincipal.add(panelItems, gbc);
-
-		JPanel panelTablaLR = crearPanelTablaLR();
-		gbc.gridx = 1;
-		gbc.gridy = 1;
-		gbc.weightx = 0.45;
-		gbc.weighty = 0.40;
-		panelPrincipal.add(panelTablaLR, gbc);
+		gbc.gridwidth = 2;
+		gbc.weightx = 0.65;
+		gbc.weighty = 0.35;
+		panelPrincipal.add(panelTablaLL1, gbc);
 
 		JPanel panelLexico = crearPanelLexico();
 		gbc.gridx = 2;
 		gbc.gridy = 1;
+		gbc.gridwidth = 1;
 		gbc.weightx = 0.35;
-		gbc.weighty = 0.40;
+		gbc.weighty = 0.35;
 		panelPrincipal.add(panelLexico, gbc);
 
-		JPanel panelSimulacion = crearPanelSimulacion();
+		JPanel panelPilaCadena = crearPanelPilaCadena();
 		gbc.gridx = 0;
 		gbc.gridy = 2;
 		gbc.gridwidth = 3;
 		gbc.weightx = 1.0;
 		gbc.weighty = 0.35;
-		panelPrincipal.add(panelSimulacion, gbc);
+		panelPrincipal.add(panelPilaCadena, gbc);
 
 		this.add(panelPrincipal, BorderLayout.CENTER);
 
@@ -95,6 +90,7 @@ public class PanelAnalisisLR0 extends JPanel {
 		btnProbarLexico.addActionListener(e -> btnProbarLexicoActionPerformed(e));
 		btnSeleccionarAfdLexico.addActionListener(e -> btnSeleccionarAfdLexicoActionPerformed(e));
 		btnAsignarTokens.addActionListener(e -> btnAsignarTokensActionPerformed(e));
+		btnAnalizarSintacticamente.addActionListener(e -> btnAnalizarSintacticamenteActionPerformed(e));
 	}
 
 	private JPanel crearPanelGramatica() {
@@ -123,25 +119,30 @@ public class PanelAnalisisLR0 extends JPanel {
 		JPanel panel = new JPanel(new BorderLayout(5, 5));
 		panel.setBackground(new Color(230, 240, 250));
 
-		JLabel lblTitulo = new JLabel("Análisis LR(0)", SwingConstants.CENTER);
+		JLabel lblTitulo = new JLabel("Análisis LL(1)", SwingConstants.CENTER);
 		lblTitulo.setFont(new Font("Arial", Font.BOLD, 14));
 		panel.add(lblTitulo, BorderLayout.NORTH);
 
 		JPanel panelCentral = new JPanel(new BorderLayout(5, 5));
 		panelCentral.setBackground(new Color(230, 240, 250));
 
+		JPanel panelBotonesSup = new JPanel(new GridLayout(1, 2, 5, 5));
+		panelBotonesSup.setBackground(new Color(230, 240, 250));
+
 		btnCrearTabla = new JButton("Crear Tabla");
 		btnCrearTabla.setFont(new Font("Arial", Font.PLAIN, 11));
-		btnCrearTabla.setPreferredSize(new Dimension(120, 30));
-		JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		panelBoton.setBackground(new Color(230, 240, 250));
-		panelBoton.add(btnCrearTabla);
-		panelCentral.add(panelBoton, BorderLayout.NORTH);
+		panelBotonesSup.add(btnCrearTabla);
+
+		btnAsignarTokens = new JButton("Asignar Tokens a terminales");
+		btnAsignarTokens.setFont(new Font("Arial", Font.PLAIN, 10));
+		panelBotonesSup.add(btnAsignarTokens);
+
+		panelCentral.add(panelBotonesSup, BorderLayout.NORTH);
 
 		JPanel panelListas = new JPanel(new GridLayout(1, 2, 5, 5));
 		panelListas.setBackground(new Color(230, 240, 250));
 
-		JPanel pNoTerminal = crearPanelTabla("NoTerminal");
+		JPanel pNoTerminal = crearPanelTabla("NOTerminal");
 		tablaNoTerminal = new JTable();
 		tablaNoTerminal.setFont(new Font("Monospaced", Font.PLAIN, 11));
 		tablaNoTerminal.setRowHeight(22);
@@ -151,7 +152,7 @@ public class PanelAnalisisLR0 extends JPanel {
 		tablaNoTerminal.getTableHeader().setFont(new Font("Arial", Font.BOLD, 10));
 		tablaNoTerminal.getTableHeader().setBackground(new Color(220, 220, 220));
 		tablaNoTerminal.setModel(new DefaultTableModel(
-			new Object[]{"Símbolo"}, 0
+			new Object[]{"NoTerminal"}, 0
 		));
 		JScrollPane scrollNT = new JScrollPane(tablaNoTerminal);
 		scrollNT.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1));
@@ -176,13 +177,6 @@ public class PanelAnalisisLR0 extends JPanel {
 		panelListas.add(pTerminalToken);
 
 		panelCentral.add(panelListas, BorderLayout.CENTER);
-
-		btnAsignarTokens = new JButton("Asignar Tokens a terminales");
-		btnAsignarTokens.setFont(new Font("Arial", Font.PLAIN, 10));
-		JPanel panelBotonAbajo = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		panelBotonAbajo.setBackground(new Color(230, 240, 250));
-		panelBotonAbajo.add(btnAsignarTokens);
-		panelCentral.add(panelBotonAbajo, BorderLayout.SOUTH);
 
 		panel.add(panelCentral, BorderLayout.CENTER);
 
@@ -215,6 +209,9 @@ public class PanelAnalisisLR0 extends JPanel {
 		panelBoton.add(btnSeleccionarAfdLexico);
 		panel.add(panelBoton, BorderLayout.NORTH);
 
+		JPanel panelCentro = new JPanel(new BorderLayout(5, 5));
+		panelCentro.setBackground(new Color(230, 240, 250));
+
 		JPanel panelSigma = new JPanel(new BorderLayout(3, 3));
 		panelSigma.setBackground(Color.WHITE);
 		panelSigma.setBorder(BorderFactory.createCompoundBorder(
@@ -234,53 +231,45 @@ public class PanelAnalisisLR0 extends JPanel {
 		));
 		panelSigma.add(txtSigma, BorderLayout.CENTER);
 
-		panel.add(panelSigma, BorderLayout.CENTER);
+		panelCentro.add(panelSigma, BorderLayout.CENTER);
+
+		btnAnalizarSintacticamente = new JButton("Analizar Sintácticamente Sigma");
+		btnAnalizarSintacticamente.setFont(new Font("Arial", Font.PLAIN, 10));
+		JPanel panelBotonAbajo = new JPanel(new FlowLayout(FlowLayout.CENTER));
+		panelBotonAbajo.setBackground(new Color(230, 240, 250));
+		panelBotonAbajo.add(btnAnalizarSintacticamente);
+		panelCentro.add(panelBotonAbajo, BorderLayout.SOUTH);
+
+		panel.add(panelCentro, BorderLayout.CENTER);
 
 		return panel;
 	}
 
-	private JPanel crearPanelItems() {
-		JPanel panel = new JPanel(new BorderLayout());
+	private JPanel crearPanelTablaLL1() {
+		JPanel panel = new JPanel(new BorderLayout(3, 3));
 		panel.setBackground(Color.WHITE);
-		panel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+		panel.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(new Color(100, 100, 100), 2),
+			BorderFactory.createEmptyBorder(5, 5, 5, 5)
+		));
 
-		tablaItems = new JTable();
-		tablaItems.setFont(new Font("Monospaced", Font.PLAIN, 10));
-		tablaItems.setRowHeight(25);
-		tablaItems.setGridColor(Color.BLACK);
-		tablaItems.setShowGrid(true);
-		tablaItems.setShowVerticalLines(true);
-		tablaItems.setShowHorizontalLines(true);
-		tablaItems.getTableHeader().setReorderingAllowed(false);
-		tablaItems.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
-		tablaItems.getTableHeader().setBackground(new Color(220, 220, 220));
-		tablaItems.setIntercellSpacing(new Dimension(1, 1));
+		JLabel lblTitulo = new JLabel("Tabla LL(1)");
+		lblTitulo.setFont(new Font("Arial", Font.BOLD, 12));
+		panel.add(lblTitulo, BorderLayout.NORTH);
 
-		JScrollPane scroll = new JScrollPane(tablaItems);
-		scroll.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-		panel.add(scroll, BorderLayout.CENTER);
+		tablaLL1 = new JTable();
+		tablaLL1.setFont(new Font("Monospaced", Font.PLAIN, 10));
+		tablaLL1.setRowHeight(25);
+		tablaLL1.setGridColor(Color.BLACK);
+		tablaLL1.setShowGrid(true);
+		tablaLL1.setShowVerticalLines(true);
+		tablaLL1.setShowHorizontalLines(true);
+		tablaLL1.getTableHeader().setReorderingAllowed(false);
+		tablaLL1.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
+		tablaLL1.getTableHeader().setBackground(new Color(220, 220, 220));
+		tablaLL1.setIntercellSpacing(new Dimension(1, 1));
 
-		return panel;
-	}
-
-	private JPanel crearPanelTablaLR() {
-		JPanel panel = new JPanel(new BorderLayout());
-		panel.setBackground(Color.WHITE);
-		panel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-
-		tablaLR = new JTable();
-		tablaLR.setFont(new Font("Monospaced", Font.PLAIN, 10));
-		tablaLR.setRowHeight(25);
-		tablaLR.setGridColor(Color.BLACK);
-		tablaLR.setShowGrid(true);
-		tablaLR.setShowVerticalLines(true);
-		tablaLR.setShowHorizontalLines(true);
-		tablaLR.getTableHeader().setReorderingAllowed(false);
-		tablaLR.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
-		tablaLR.getTableHeader().setBackground(new Color(220, 220, 220));
-		tablaLR.setIntercellSpacing(new Dimension(1, 1));
-
-		JScrollPane scroll = new JScrollPane(tablaLR);
+		JScrollPane scroll = new JScrollPane(tablaLL1);
 		scroll.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		panel.add(scroll, BorderLayout.CENTER);
 
@@ -323,24 +312,31 @@ public class PanelAnalisisLR0 extends JPanel {
 		return panel;
 	}
 
-	private JPanel crearPanelSimulacion() {
-		JPanel panel = new JPanel(new BorderLayout());
+	private JPanel crearPanelPilaCadena() {
+		JPanel panel = new JPanel(new BorderLayout(3, 3));
 		panel.setBackground(Color.WHITE);
-		panel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+		panel.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(new Color(100, 100, 100), 2),
+			BorderFactory.createEmptyBorder(5, 5, 5, 5)
+		));
 
-		tablaPilaCadenaAccion = new JTable();
-		tablaPilaCadenaAccion.setFont(new Font("Monospaced", Font.PLAIN, 10));
-		tablaPilaCadenaAccion.setRowHeight(25);
-		tablaPilaCadenaAccion.setGridColor(Color.BLACK);
-		tablaPilaCadenaAccion.setShowGrid(true);
-		tablaPilaCadenaAccion.setShowVerticalLines(true);
-		tablaPilaCadenaAccion.setShowHorizontalLines(true);
-		tablaPilaCadenaAccion.getTableHeader().setReorderingAllowed(false);
-		tablaPilaCadenaAccion.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
-		tablaPilaCadenaAccion.getTableHeader().setBackground(new Color(220, 220, 220));
-		tablaPilaCadenaAccion.setIntercellSpacing(new Dimension(1, 1));
+		JLabel lblTitulo = new JLabel("Pila/Cadena");
+		lblTitulo.setFont(new Font("Arial", Font.BOLD, 12));
+		panel.add(lblTitulo, BorderLayout.NORTH);
 
-		JScrollPane scroll = new JScrollPane(tablaPilaCadenaAccion);
+		tablaPilaCadena = new JTable();
+		tablaPilaCadena.setFont(new Font("Monospaced", Font.PLAIN, 10));
+		tablaPilaCadena.setRowHeight(25);
+		tablaPilaCadena.setGridColor(Color.BLACK);
+		tablaPilaCadena.setShowGrid(true);
+		tablaPilaCadena.setShowVerticalLines(true);
+		tablaPilaCadena.setShowHorizontalLines(true);
+		tablaPilaCadena.getTableHeader().setReorderingAllowed(false);
+		tablaPilaCadena.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
+		tablaPilaCadena.getTableHeader().setBackground(new Color(220, 220, 220));
+		tablaPilaCadena.setIntercellSpacing(new Dimension(1, 1));
+
+		JScrollPane scroll = new JScrollPane(tablaPilaCadena);
 		scroll.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		panel.add(scroll, BorderLayout.CENTER);
 
@@ -348,28 +344,24 @@ public class PanelAnalisisLR0 extends JPanel {
 	}
 
 	public void inicializarModelosTablas() {
-		tablaItems.setModel(new DefaultTableModel(
-			new Object[]{"Ij", "I-A(Ij,Simb)", "Items"}, 0
-		));
-
-		tablaLR.setModel(new DefaultTableModel(
-			new Object[]{"Estado"}, 0
+		tablaLL1.setModel(new DefaultTableModel(
+			new Object[]{"No terminal"}, 0
 		));
 
 		tablaLexemaToken.setModel(new DefaultTableModel(
 			new Object[]{"Lexema", "Token"}, 0
 		));
 
-		tablaPilaCadenaAccion.setModel(new DefaultTableModel(
-			new Object[]{"Pila", "Cadena", "Acción"}, 0
+		tablaPilaCadena.setModel(new DefaultTableModel(
+			new Object[]{"Pila", "Cadena"}, 0
 		));
 	}
 
 	private void btnCrearTablaActionPerformed(ActionEvent evt) {
 		String gramatica = areaGramatica.getText();
 		JOptionPane.showMessageDialog(this,
-			"Creando tabla LR(0) para:\n" + gramatica,
-			"Proceso LR(0)",
+			"Creando tabla LL(1) para:\n" + gramatica,
+			"Proceso LL(1)",
 			JOptionPane.INFORMATION_MESSAGE);
 	}
 
@@ -405,13 +397,22 @@ public class PanelAnalisisLR0 extends JPanel {
 			JOptionPane.INFORMATION_MESSAGE);
 	}
 
+	private void btnAnalizarSintacticamenteActionPerformed(ActionEvent e) {
+		String sigma = txtSigma.getText();
+		JOptionPane.showMessageDialog(this,
+			"Analizando sintácticamente: " + sigma,
+			"Análisis Sintáctico LL(1)",
+			JOptionPane.INFORMATION_MESSAGE);
+	}
+
 	public JTextArea getAreaGramatica() { return areaGramatica; }
 	public JTextField getTxtSigma() { return txtSigma; }
 	public JTable getTablaNoTerminal() { return tablaNoTerminal; }
 	public JTable getTablaTerminalToken() { return tablaTerminalToken; }
-	public JTable getTablaItems() { return tablaItems; }
-	public JTable getTablaLR() { return tablaLR; }
+	public JTable getTablaLL1() { return tablaLL1; }
 	public JTable getTablaLexemaToken() { return tablaLexemaToken; }
-	public JTable getTablaPilaCadenaAccion() { return tablaPilaCadenaAccion; }
+	public JTable getTablaPilaCadena() { return tablaPilaCadena; }
 	public File getArchivoAFDLexico() { return archivoAFDLexico; }
+	public JButton getBtnCrearTabla() { return btnCrearTabla; }
+	public JButton getBtnAnalizarSintacticamente() { return btnAnalizarSintacticamente; }
 }

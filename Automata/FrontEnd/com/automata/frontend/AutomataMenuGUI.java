@@ -1,74 +1,63 @@
 package com.automata.frontend;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.FontMetrics;
+import java.util.Arrays;
+
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.QuadCurve2D;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.HashMap;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.swing.JFileChooser;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 
-import BackEnd.AFD;
+import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.view.mxGraph;
+import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
 import BackEnd.AFN;
-import BackEnd.EdoAFD;
+import BackEnd.AFD;
 import BackEnd.Estado;
-import BackEnd.SimbEspeciales;
 import BackEnd.Transicion;
-import BackEnd.LexicalAnalyzer;
-import BackEnd.LexicalAnalyzer.Definition;
-import BackEnd.LexicalAnalyzer.TokenResult;
-import BackEnd.LexicalAnalyzer.LexicalException;
-
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
+import BackEnd.EdoAFD;
+import BackEnd.SimbEspeciales;
+import BackEnd.AFD;
 
 public class AutomataMenuGUI extends JFrame {
 
@@ -97,7 +86,9 @@ public class AutomataMenuGUI extends JFrame {
     private final Map<String, AFN> afnMap = new HashMap<>();
     private final List<String> createdAfdNames = new ArrayList<>();
     private final Map<String, AFD> afdMap = new HashMap<>();
-    private LexicalAnalyzer lexicalAnalyzer;
+    private final Map<Character, Integer> tokenPorSimbolo = new HashMap<>();
+    private int nextTokenValue = 40;
+
     // JComboBoxes para las operaciones
     private JComboBox<String> comboUnion1;
     private JComboBox<String> comboUnion2;
@@ -108,6 +99,7 @@ public class AutomataMenuGUI extends JFrame {
     private JComboBox<String> comboCerraduraOpcional;
     private JComboBox<String> comboMostrarAFN;
     private JComboBox<String> comboMostrarAFD;
+
 
     public AutomataMenuGUI() {
         initComponents();
@@ -195,28 +187,15 @@ public class AutomataMenuGUI extends JFrame {
         JMenuItem itemGuardar = new JMenuItem("Guardar Autómata");
         JMenuItem itemCargar = new JMenuItem("Cargar Autómata");
         JMenuItem itemSalir = new JMenuItem("Salir");
-        JMenuItem itemImportarLexico = new JMenuItem("Importar Clases Léxicas...");
         
         itemSalir.addActionListener(e -> System.exit(0)); 
-        itemNuevo.addActionListener(e -> {
-            int respuesta = JOptionPane.showConfirmDialog(this,
-                    "Se eliminarán todos los AFN, AFD y clases léxicas cargadas.\n¿Deseas continuar?",
-                    "Nuevo Proyecto",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
-            if (respuesta == JOptionPane.YES_OPTION) {
-                clearWorkspace();
-                JOptionPane.showMessageDialog(this, "Espacio de trabajo limpiado.", "Nuevo Proyecto", JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
+        itemNuevo.addActionListener(e -> JOptionPane.showMessageDialog(this, "Se limpiará el espacio de trabajo para un Nuevo Proyecto.", "Nuevo Proyecto", JOptionPane.INFORMATION_MESSAGE));
         itemGuardar.addActionListener(e -> showSaveDialog()); // Al darle clic se abre un diálogo de guardar
         itemCargar.addActionListener(e -> showLoadDialog()); // Al darle clic se abre un diálogo de cargar
-        itemImportarLexico.addActionListener(e -> importarClasesLexicas());
         
         menuArchivo.add(itemNuevo);
         menuArchivo.add(itemGuardar);
         menuArchivo.add(itemCargar);
-        menuArchivo.add(itemImportarLexico);
         menuArchivo.addSeparator(); 
         menuArchivo.add(itemSalir);
         menuBar.add(menuArchivo);
@@ -237,15 +216,12 @@ public class AutomataMenuGUI extends JFrame {
         // =======================================================
         JMenu menuHerramientas = createBaseMenu("Herramientas", "herramientas.png");
         JMenuItem itemConvAFNtoAFD = new JMenuItem("Convertir AFN a AFD");
-        JMenuItem itemAnalizarCadena = new JMenuItem("Analizar cadena...");
         JMenuItem itemMinimizacion = new JMenuItem("Minimizar AFD");
         
         itemConvAFNtoAFD.addActionListener(e -> showConversionDialog()); // Al darle clic se abre el diálogo de conversión
-        itemAnalizarCadena.addActionListener(e -> showLexicalAnalysisDialog());
         itemMinimizacion.addActionListener(e -> showMinimizationDialog()); // Al darle clic se abre el diálogo de minimización
 
         menuHerramientas.add(itemConvAFNtoAFD);
-        menuHerramientas.add(itemAnalizarCadena);
         menuHerramientas.add(itemMinimizacion);
         menuBar.add(menuHerramientas);
 
@@ -272,268 +248,31 @@ public class AutomataMenuGUI extends JFrame {
 
     // Muestra un JFileChooser para simular la acción de Guardar
     private void showSaveDialog() {
-        if (afdMap.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Aún no existen AFD para guardar.\nConvierte un AFN primero.", "Sin AFD disponibles", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panel.add(new JLabel("Selecciona el AFD que deseas guardar:"));
-
-        String[] nombres = createdAfdNames.toArray(new String[0]);
-        JComboBox<String> combo = new JComboBox<>(nombres);
-        combo.setMaximumSize(new Dimension(240, 28));
-        panel.add(combo);
-
-        int opcion = JOptionPane.showConfirmDialog(this, panel, "Guardar AFD", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (opcion != JOptionPane.OK_OPTION) {
-            return;
-        }
-        String seleccionado = (String) combo.getSelectedItem();
-        if (seleccionado == null) {
-            return;
-        }
-        AFD afd = afdMap.get(seleccionado);
-        if (afd == null) {
-            JOptionPane.showMessageDialog(this, "No se pudo recuperar el AFD seleccionado.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Guardar AFD");
-        fileChooser.setSelectedFile(new File(seleccionado + ".afd"));
-        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File destino = fileChooser.getSelectedFile();
-            if (destino.exists()) {
-                int sobrescribir = JOptionPane.showConfirmDialog(this,
-                        "El archivo ya existe. ¿Deseas sobrescribirlo?",
-                        "Confirmar sobrescritura",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE);
-                if (sobrescribir != JOptionPane.YES_OPTION) {
-                    return;
-                }
-            }
-            boolean ok = afd.SaveAFD(destino.getAbsolutePath());
-            if (ok) {
-                JOptionPane.showMessageDialog(this, "AFD guardado en:\n" + destino.getAbsolutePath(), "Guardado completado", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "No se pudo guardar el AFD.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        fileChooser.setDialogTitle("Guardar Autómata");
+        
+        int userSelection = fileChooser.showSaveDialog(this);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            // Lógica pendiente: llamar a AFD.SaveAFD(fileToSave.getAbsolutePath())
+            JOptionPane.showMessageDialog(this, "Autómata guardado exitosamente en:\n" + fileToSave.getAbsolutePath(), "Guardado Completo", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
+    // Muestra un JFileChooser para simular la acción de Cargar
     private void showLoadDialog() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Cargar AFD");
-        if (fileChooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
-            return;
+        fileChooser.setDialogTitle("Cargar Autómata");
+        
+        int userSelection = fileChooser.showOpenDialog(this);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToLoad = fileChooser.getSelectedFile();
+            // Lógica pendiente: llamar a AFD.LoadAFD(fileToLoad.getAbsolutePath())
+            JOptionPane.showMessageDialog(this, "Autómata cargado desde:\n" + fileToLoad.getAbsolutePath(), "Carga Completa", JOptionPane.INFORMATION_MESSAGE);
+            // Si la carga es exitosa, se actualizaría la interfaz con los datos del autómata.
         }
-        File archivo = fileChooser.getSelectedFile();
-        if (archivo == null || !archivo.exists()) {
-            JOptionPane.showMessageDialog(this, "Selecciona un archivo válido.", "Archivo no encontrado", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        AFD cargado = new AFD();
-        if (!cargado.LoadAFD(archivo.getAbsolutePath())) {
-            JOptionPane.showMessageDialog(this, "El archivo no contiene un AFD válido.", "Carga fallida", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        String nombreSugerido = archivo.getName();
-        if (nombreSugerido.lastIndexOf('.') > 0) {
-            nombreSugerido = nombreSugerido.substring(0, nombreSugerido.lastIndexOf('.'));
-        }
-        String nombre = solicitarNombreDisponible(nombreSugerido);
-        if (nombre == null) {
-            return;
-        }
-        registerAFD(nombre, cargado);
-        JOptionPane.showMessageDialog(this, "AFD cargado como '" + nombre + "'.", "Carga completada", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void clearWorkspace() {
-        afnMap.clear();
-        afdMap.clear();
-        createdAutomataNames.clear();
-        createdAfdNames.clear();
-        lexicalAnalyzer = null;
-        updateAutomataLists();
-        showWelcomePanel();
-    }
-
-    private void importarClasesLexicas() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Importar clases léxicas");
-        if (fileChooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
-        File archivo = fileChooser.getSelectedFile();
-        if (archivo == null || !archivo.exists()) {
-            JOptionPane.showMessageDialog(this, "Selecciona un archivo válido.", "Archivo no encontrado", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        try {
-            List<Definition> definiciones = parseLexicalDefinitions(archivo.toPath());
-            lexicalAnalyzer = LexicalAnalyzer.build(definiciones);
-            String nombreBase = archivo.getName();
-            int punto = nombreBase.lastIndexOf('.');
-            if (punto > 0) {
-                nombreBase = nombreBase.substring(0, punto);
-            }
-            String nombreAFD = solicitarNombreDisponible(nombreBase + "_AFD");
-            if (nombreAFD != null && !nombreAFD.isEmpty()) {
-                registerAFD(nombreAFD, lexicalAnalyzer.getAfd());
-            }
-            JOptionPane.showMessageDialog(this,
-                    "Se importaron " + definiciones.size() + " clases léxicas.\n" +
-                    "Utiliza Herramientas → Analizar cadena para obtener la secuencia de tokens.",
-                    "Importación exitosa",
-                    JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "No fue posible importar las clases léxicas:\n" + ex.getMessage(),
-                    "Error al importar",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void showLexicalAnalysisDialog() {
-        if (lexicalAnalyzer == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Primero importa las clases léxicas (Archivo → Importar clases léxicas).",
-                    "Analizador no disponible",
-                    JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        JTextArea areaEntrada = new JTextArea(5, 40);
-        areaEntrada.setLineWrap(true);
-        areaEntrada.setWrapStyleWord(true);
-        JScrollPane scrollEntrada = new JScrollPane(areaEntrada);
-        scrollEntrada.setBorder(BorderFactory.createTitledBorder("Cadena a analizar"));
-
-        JTextArea areaSalida = new JTextArea(12, 40);
-        areaSalida.setEditable(false);
-        areaSalida.setFont(new Font("Consolas", Font.PLAIN, 14));
-        JScrollPane scrollSalida = new JScrollPane(areaSalida);
-        scrollSalida.setBorder(BorderFactory.createTitledBorder("Resultado"));
-
-        JButton btnAnalizar = new RoundedButton("Analizar", 8);
-        btnAnalizar.setBackground(COLOR_AZUL_ACCENT);
-        btnAnalizar.setForeground(Color.WHITE);
-        btnAnalizar.addActionListener(e -> {
-            String texto = areaEntrada.getText();
-            try {
-                List<TokenResult> resultados = lexicalAnalyzer.analyze(texto);
-                areaSalida.setText(formatearResultadoLexico(resultados));
-                areaSalida.setCaretPosition(0);
-            } catch (LexicalException ex) {
-                areaSalida.setText("Error: " + ex.getMessage());
-            }
-        });
-
-        JPanel panelCentro = new JPanel(new BorderLayout(15, 15));
-        panelCentro.setOpaque(false);
-        panelCentro.add(scrollEntrada, BorderLayout.NORTH);
-        panelCentro.add(scrollSalida, BorderLayout.CENTER);
-
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panelBotones.setOpaque(false);
-        panelBotones.add(btnAnalizar);
-
-        JPanel contenedor = new JPanel(new BorderLayout());
-        contenedor.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        contenedor.add(panelCentro, BorderLayout.CENTER);
-        contenedor.add(panelBotones, BorderLayout.SOUTH);
-
-        JDialog dialog = new JDialog(this, "Analizar cadena", true);
-        dialog.getContentPane().add(contenedor);
-        dialog.setSize(680, 520);
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-    }
-
-    private List<Definition> parseLexicalDefinitions(Path path) throws IOException {
-        List<Definition> definiciones = new ArrayList<Definition>();
-        int linea = 0;
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            String raw;
-            while ((raw = reader.readLine()) != null) {
-                linea++;
-                String line = raw.trim();
-                if (line.isEmpty() || line.startsWith("#")) {
-                    continue;
-                }
-                String nombre;
-                String expresion;
-                String tokenTexto;
-                if (line.contains("->")) {
-                    String[] partes = line.split("->", 3);
-                    if (partes.length < 3) {
-                        throw new IllegalArgumentException("Formato inválido en la línea " + linea + ": " + raw);
-                    }
-                    nombre = partes[0].trim();
-                    expresion = partes[1].trim();
-                    tokenTexto = partes[2].trim();
-                } else {
-                    String[] partes = line.split("\\s+", 3);
-                    if (partes.length < 3) {
-                        throw new IllegalArgumentException("Formato inválido en la línea " + linea + ": " + raw);
-                    }
-                    nombre = partes[0].trim();
-                    expresion = partes[1].trim();
-                    tokenTexto = partes[2].trim();
-                }
-                if (nombre.isEmpty() || expresion.isEmpty() || tokenTexto.isEmpty()) {
-                    throw new IllegalArgumentException("Datos incompletos en la línea " + linea + ": " + raw);
-                }
-                int token;
-                try {
-                    token = Integer.parseInt(tokenTexto);
-                } catch (NumberFormatException ex) {
-                    throw new IllegalArgumentException("Token inválido en la línea " + linea + ": " + tokenTexto);
-                }
-                definiciones.add(new Definition(nombre, expresion, token));
-            }
-        }
-        if (definiciones.isEmpty()) {
-            throw new IllegalArgumentException("El archivo no contiene clases léxicas.");
-        }
-        return definiciones;
-    }
-
-    private String formatearResultadoLexico(List<TokenResult> resultados) {
-        StringBuilder secuencia = new StringBuilder("Secuencia de tokens: ");
-        StringBuilder detalle = new StringBuilder();
-
-        for (int i = 0; i < resultados.size(); i++) {
-            TokenResult resultado = resultados.get(i);
-            if (resultado.finDeCadena) {
-                if (i > 0) {
-                    secuencia.append(", ");
-                }
-                secuencia.append("FIN");
-                detalle.append("Fin de cadena");
-                break;
-            } else {
-                if (i > 0) {
-                    secuencia.append(", ");
-                }
-                secuencia.append(resultado.token);
-
-                String lexema = resultado.lexeme
-                        .replace("\n", "\\n")
-                        .replace("\t", "\\t")
-                        .replace("\r", "\\r");
-                detalle.append(String.format("%-12s -> %-20s (token %d)%n",
-                        resultado.definition.name,
-                        lexema,
-                        resultado.token));
-            }
-        }
-
-        return secuencia.toString() + "\n\n" + detalle.toString();
     }
     
     // Muestra el Diálogo de Conversión (Herramientas)
@@ -685,6 +424,8 @@ private JPanel createDefaultCard(String title) {
 
         panelLateral.add(createSidebarButton(" AFN Básico", "CrearAFN1", COLOR_AZUL_ACCENT, "afn_basico.png"));
         panelLateral.add(Box.createVerticalStrut(6));
+        panelLateral.add(createSidebarButton(" AFD Básico", "CrearAFD1", COLOR_AZUL_ACCENT, "afd_basico.png"));
+        panelLateral.add(Box.createVerticalStrut(6));
         panelLateral.add(createSidebarButton(" Unión", "Union", COLOR_AZUL_MEDIO, "union.png"));
         panelLateral.add(Box.createVerticalStrut(6));
         panelLateral.add(createSidebarButton(" Concatenación", "Concatenacion", COLOR_AZUL_CLARO, "concatenacion.png"));
@@ -808,6 +549,8 @@ private JPanel createDefaultCard(String title) {
         switch (cardName) {
             case "CrearAFN1":
                 return createAFNPanel();
+            case "CrearAFD1":
+                return createAFDPanel();
             case "Union":
                 return createUnionPanel();
             case "Concatenacion":
@@ -864,16 +607,6 @@ private JPanel createDefaultCard(String title) {
         JTextField txtInput = new JTextField(10);
         txtInput.setMaximumSize(new Dimension(200, 30));
         panel.add(txtInput);
-        panel.add(Box.createVerticalStrut(10));
-
-        JLabel lblToken = new JLabel("Token para los estados de aceptación:");
-        lblToken.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lblToken.setAlignmentX(CENTER_ALIGNMENT);
-        panel.add(lblToken);
-
-        JTextField txtToken = new JTextField(10);
-        txtToken.setMaximumSize(new Dimension(200, 30));
-        panel.add(txtToken);
         panel.add(Box.createVerticalStrut(20));
 
         JButton btnCrear = new RoundedButton("Crear AFN", 10);
@@ -896,26 +629,13 @@ private JPanel createDefaultCard(String title) {
                 JOptionPane.showMessageDialog(this, "Por favor, ingrese una sentencia.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            String tokenTexto = txtToken.getText().trim();
-            if (tokenTexto.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Ingresa el token que deseas asignar.", "Token requerido", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            int tokenValor;
-            try {
-                tokenValor = Integer.parseInt(tokenTexto);
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "El token debe ser un número entero.", "Token inválido", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
             try {
                 AFN nuevo = AFN.fromString(input);
-                registerAFN(automataName, nuevo, tokenValor);
+                int token = calcularTokenParaLexema(input);
+                registerAFN(automataName, nuevo, token);
                 showAutomataDetails("AFN creado", automataName, nuevo);
                 txtNombre.setText("");
                 txtInput.setText("");
-                txtToken.setText("");
             } catch (IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
@@ -926,6 +646,49 @@ private JPanel createDefaultCard(String title) {
 
         return panel;
     }
+
+
+    // Método para crear el panel de creación de AFD
+    private JPanel createAFDPanel() {
+        JPanel panel = new RoundedPanel(15);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+        panel.setBackground(COLOR_AZUL_SUAVE);
+
+        JLabel lblTitulo = new JLabel("Crear AFD Básico");
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblTitulo.setAlignmentX(CENTER_ALIGNMENT);
+        panel.add(lblTitulo);
+        panel.add(Box.createVerticalStrut(20));
+
+        JLabel lblInput = new JLabel("Ingrese dos caracteres (ej. 'ab'):");
+        lblInput.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        lblInput.setAlignmentX(CENTER_ALIGNMENT);
+        panel.add(lblInput);
+
+        JTextField txtInput = new JTextField(10);
+        txtInput.setMaximumSize(new Dimension(200, 30));
+        panel.add(txtInput);
+        panel.add(Box.createVerticalStrut(20));
+
+        JButton btnCrear = new RoundedButton("Crear AFD", 10);
+        btnCrear.setBackground(COLOR_AZUL_ACCENT);
+        btnCrear.setForeground(Color.WHITE);
+        btnCrear.setAlignmentX(CENTER_ALIGNMENT);
+        btnCrear.addActionListener(e -> {
+            String input = txtInput.getText().trim();
+            if (input.length() == 2) {
+                // Lógica de creación del AFD
+                JOptionPane.showMessageDialog(this, "AFD creado para los caracteres: '" + input + "'", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Por favor, ingrese exactamente dos caracteres.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        panel.add(btnCrear);
+
+        return panel;
+    }
+
 
     // Método para crear el panel de Unión
     private JPanel createUnionPanel() {
@@ -978,13 +741,14 @@ private JPanel createDefaultCard(String title) {
                 return;
             }
             java.util.List<String> eliminar = Arrays.asList(auto1, auto2);
-            CapturaToken captura = solicitarNombreYToken(auto1 + "_U_" + auto2, eliminar);
-            if (captura != null) {
+            String sugerencia = auto1 + "_U_" + auto2;
+            String nuevoNombre = solicitarNombreDisponible(sugerencia, eliminar);
+            if (nuevoNombre != null) {
                 try {
                     AFN resultado = AFN.unir(afn1, afn2);
                     removeAFNs(eliminar);
-                    registerAFN(captura.nombre, resultado, Integer.valueOf(captura.token));
-                    showAutomataDetails("Unión completada", captura.nombre, resultado);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Unión completada", nuevoNombre, resultado);
                 } catch (Exception exUnion) {
                     JOptionPane.showMessageDialog(this, "No se pudo realizar la unión: " + exUnion.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -1047,13 +811,14 @@ private JPanel createDefaultCard(String title) {
                 return;
             }
             java.util.List<String> eliminar = Arrays.asList(auto1, auto2);
-            CapturaToken captura = solicitarNombreYToken(auto1 + "_C_" + auto2, eliminar);
-            if (captura != null) {
+            String sugerencia = auto1 + "_C_" + auto2;
+            String nuevoNombre = solicitarNombreDisponible(sugerencia, eliminar);
+            if (nuevoNombre != null) {
                 try {
                     AFN resultado = AFN.concatenar(afn1, afn2);
                     removeAFNs(eliminar);
-                    registerAFN(captura.nombre, resultado, Integer.valueOf(captura.token));
-                    showAutomataDetails("Concatenación completada", captura.nombre, resultado);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Concatenación completada", nuevoNombre, resultado);
                 } catch (Exception exJoin) {
                     JOptionPane.showMessageDialog(this, "No se pudo realizar la concatenación: " + exJoin.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -1104,13 +869,13 @@ private JPanel createDefaultCard(String title) {
                 return;
             }
             java.util.List<String> eliminar = java.util.Collections.singletonList(auto);
-            CapturaToken captura = solicitarNombreYToken(auto + "_pos", eliminar);
-            if (captura != null) {
+            String nuevoNombre = solicitarNombreDisponible(auto + "_pos", eliminar);
+            if (nuevoNombre != null) {
                 try {
                     AFN resultado = AFN.cerraduraPositiva(base);
                     removeAFNs(eliminar);
-                    registerAFN(captura.nombre, resultado, Integer.valueOf(captura.token));
-                    showAutomataDetails("Cerradura positiva", captura.nombre, resultado);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Cerradura positiva", nuevoNombre, resultado);
                 } catch (Exception exCPos) {
                     JOptionPane.showMessageDialog(this, "No se pudo aplicar la cerradura positiva: " + exCPos.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -1161,13 +926,13 @@ private JPanel createDefaultCard(String title) {
                 return;
             }
             java.util.List<String> eliminar = java.util.Collections.singletonList(auto);
-            CapturaToken captura = solicitarNombreYToken(auto + "_kleene", eliminar);
-            if (captura != null) {
+            String nuevoNombre = solicitarNombreDisponible(auto + "_kleene", eliminar);
+            if (nuevoNombre != null) {
                 try {
                     AFN resultado = AFN.cerraduraKleene(base);
                     removeAFNs(eliminar);
-                    registerAFN(captura.nombre, resultado, Integer.valueOf(captura.token));
-                    showAutomataDetails("Cerradura Kleene", captura.nombre, resultado);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Cerradura Kleene", nuevoNombre, resultado);
                 } catch (Exception exCK) {
                     JOptionPane.showMessageDialog(this, "No se pudo aplicar la cerradura Kleene: " + exCK.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -1218,13 +983,13 @@ private JPanel createDefaultCard(String title) {
                 return;
             }
             java.util.List<String> eliminar = java.util.Collections.singletonList(auto);
-            CapturaToken captura = solicitarNombreYToken(auto + "_opc", eliminar);
-            if (captura != null) {
+            String nuevoNombre = solicitarNombreDisponible(auto + "_opc", eliminar);
+            if (nuevoNombre != null) {
                 try {
                     AFN resultado = AFN.cerraduraOpcional(base);
                     removeAFNs(eliminar);
-                    registerAFN(captura.nombre, resultado, Integer.valueOf(captura.token));
-                    showAutomataDetails("Cerradura opcional", captura.nombre, resultado);
+                    registerAFN(nuevoNombre, resultado, null);
+                    showAutomataDetails("Cerradura opcional", nuevoNombre, resultado);
                 } catch (Exception exOpc) {
                     JOptionPane.showMessageDialog(this, "No se pudo aplicar la cerradura opcional: " + exOpc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -1300,22 +1065,11 @@ private JPanel createDefaultCard(String title) {
         comboMostrarAFD.setMaximumSize(new Dimension(200, 30));
         panel.add(comboMostrarAFD);
         panel.add(Box.createVerticalStrut(20));
-        boolean hayAfdDisponibles = !createdAfdNames.isEmpty();
 
         JButton btnMostrar = new RoundedButton("Mostrar", 10);
         btnMostrar.setBackground(COLOR_AZUL_ACCENT);
         btnMostrar.setForeground(Color.WHITE);
         btnMostrar.setAlignmentX(CENTER_ALIGNMENT);
-        btnMostrar.setEnabled(hayAfdDisponibles);
-        comboMostrarAFD.setEnabled(hayAfdDisponibles);
-        if(!hayAfdDisponibles){
-            JLabel lblAviso = new JLabel("<html><center>No hay AFD registrados.<br>Utiliza Herramientas → Convertir AFN a AFD para generar uno.</center></html>");
-            lblAviso.setFont(new Font("Segoe UI", Font.ITALIC, 14));
-            lblAviso.setForeground(COLOR_TEXTO_OSCURO);
-            lblAviso.setAlignmentX(CENTER_ALIGNMENT);
-            panel.add(lblAviso);
-            panel.add(Box.createVerticalStrut(10));
-        }
         btnMostrar.addActionListener(e -> {
             String auto = (String) comboMostrarAFD.getSelectedItem();
             if (auto == null) {
@@ -1366,6 +1120,47 @@ private JPanel createDefaultCard(String title) {
             String[] afdArray = createdAfdNames.toArray(new String[0]);
             comboMostrarAFD.setModel(new javax.swing.DefaultComboBoxModel<>(afdArray));
         }
+    }
+
+    private int calcularTokenParaLexema(String lexema){
+        if(lexema == null || lexema.isEmpty()){
+            return siguienteTokenSecuencial();
+        }
+        boolean soloDigitos = true;
+        boolean soloLetras = true;
+        boolean soloBlancos = true;
+        for(char c : lexema.toCharArray()){
+            if(!Character.isDigit(c)){
+                soloDigitos = false;
+            }
+            if(!Character.isLetter(c)){
+                soloLetras = false;
+            }
+            if(!Character.isWhitespace(c)){
+                soloBlancos = false;
+            }
+        }
+        if(soloDigitos){
+            return 10;
+        }
+        if(soloLetras){
+            return 20;
+        }
+        if(soloBlancos){
+            return 30;
+        }
+        if(lexema.length() == 1){
+            return tokenParaSimbolo(lexema.charAt(0));
+        }
+        return siguienteTokenSecuencial();
+    }
+
+    private int tokenParaSimbolo(char c){
+        return tokenPorSimbolo.computeIfAbsent(c, key -> siguienteTokenSecuencial());
+    }
+
+    private int siguienteTokenSecuencial(){
+        return nextTokenValue++;
     }
 
     private void registerAFN(String name, AFN automaton, Integer tokenOverride) {
@@ -1436,60 +1231,6 @@ private JPanel createDefaultCard(String title) {
         }
     }
 
-    private CapturaToken solicitarNombreYToken(String sugerencia, java.util.List<String> nombresReservados) {
-        java.util.Set<String> reservados = new java.util.HashSet<String>();
-        if (nombresReservados != null) {
-            reservados.addAll(nombresReservados);
-        }
-        String propuesta = sugerencia != null ? sugerencia : "Automata" + (createdAutomataNames.size() + 1);
-        JTextField txtNombre = new JTextField(propuesta, 18);
-        JTextField txtToken = new JTextField(8);
-
-        while (true) {
-            JPanel panel = new JPanel();
-            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-            panel.add(new JLabel("Nombre del nuevo autómata:"));
-            panel.add(txtNombre);
-            panel.add(Box.createVerticalStrut(8));
-            panel.add(new JLabel("Token (entero):"));
-            panel.add(txtToken);
-
-            int opcion = JOptionPane.showConfirmDialog(this, panel, "Configurar nuevo autómata", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (opcion != JOptionPane.OK_OPTION) {
-                return null;
-            }
-
-            String nombre = txtNombre.getText().trim();
-            String tokenTexto = txtToken.getText().trim();
-
-            if (nombre.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "El nombre no puede estar vacío.", "Error", JOptionPane.ERROR_MESSAGE);
-                continue;
-            }
-
-            if (!reservados.contains(nombre) && (afnMap.containsKey(nombre) || afdMap.containsKey(nombre))) {
-                JOptionPane.showMessageDialog(this, "Ya existe un autómata con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
-                txtNombre.setText(nombre + "_1");
-                continue;
-            }
-
-            if (tokenTexto.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Ingresa el token que deseas asignar.", "Token requerido", JOptionPane.ERROR_MESSAGE);
-                continue;
-            }
-
-            int token;
-            try {
-                token = Integer.parseInt(tokenTexto);
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "El token debe ser un número entero.", "Token inválido", JOptionPane.ERROR_MESSAGE);
-                continue;
-            }
-
-            return new CapturaToken(nombre, token);
-        }
-    }
-
     private void showAfdDetails(String titulo, String nombre, AFD afd) {
         if (afd == null) {
             JOptionPane.showMessageDialog(this, "No hay información disponible para ese AFD.", "Información", JOptionPane.INFORMATION_MESSAGE);
@@ -1505,8 +1246,6 @@ private JPanel createDefaultCard(String title) {
         }
         DefaultTableModel modelo = new DefaultTableModel(datos, tabla.headers.toArray(new String[0]));
         JTable tablaVisual = new JTable(modelo);
-        tablaVisual.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        tablaVisual.setFillsViewportHeight(true);
         tablaVisual.setEnabled(false);
         tablaVisual.setRowHeight(24);
         JScrollPane scroll = new JScrollPane(tablaVisual);
@@ -1545,37 +1284,12 @@ private JPanel createDefaultCard(String title) {
         btnGrafo.setForeground(Color.WHITE);
         btnGrafo.addActionListener(ev -> mostrarGrafoAFD(nombre, afd));
 
-        JButton btnImagen = new RoundedButton("Guardar imagen", 8);
-        btnImagen.setBackground(COLOR_AZUL_CLARO);
-        btnImagen.setForeground(Color.WHITE);
-        btnImagen.addActionListener(ev -> {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setDialogTitle("Exportar tabla como imagen");
-            FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("Imagen PNG (*.png)", "png");
-            FileNameExtensionFilter jpgFilter = new FileNameExtensionFilter("Imagen JPG (*.jpg, *.jpeg)", "jpg", "jpeg");
-            chooser.addChoosableFileFilter(pngFilter);
-            chooser.addChoosableFileFilter(jpgFilter);
-            chooser.setFileFilter(pngFilter);
-            chooser.setSelectedFile(new File(nombre + "_tabla.png"));
-            int opcion = chooser.showSaveDialog(dialogo);
-            if(opcion == JFileChooser.APPROVE_OPTION){
-                File archivo = asegurarExtensionImagen(chooser.getSelectedFile(), chooser.getFileFilter());
-                try {
-                    exportarTablaComoImagen(tablaVisual, archivo);
-                    JOptionPane.showMessageDialog(dialogo, "Imagen guardada en\n" + archivo.getAbsolutePath(), "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(dialogo, "No se pudo exportar la imagen: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
-
         JButton btnCerrar = new RoundedButton("Cerrar", 8);
         btnCerrar.setBackground(COLOR_AZUL_PRINCIPAL);
         btnCerrar.setForeground(Color.WHITE);
         btnCerrar.addActionListener(ev -> dialogo.dispose());
 
         panelBotones.add(btnGuardar);
-        panelBotones.add(btnImagen);
         panelBotones.add(btnGrafo);
         panelBotones.add(btnCerrar);
         dialogo.getContentPane().add(panelBotones, BorderLayout.SOUTH);
@@ -1633,30 +1347,106 @@ private JPanel createDefaultCard(String title) {
     }
 
     private void mostrarGrafoAFN(String nombre, AFN afn) {
-        GraphVisualizationPanel panel = GraphVisualizationPanel.fromAFN(afn, this::etiquetaTransicion);
-        mostrarGrafoEnDialogo("AFN: " + nombre, panel);
+        mxGraph graph = new mxGraph();
+        Object parent = graph.getDefaultParent();
+        java.util.Map<Estado, Object> vertices = new HashMap<>();
+        graph.getModel().beginUpdate();
+        try {
+            for (Estado estado : afn.getEstados()) {
+                String etiqueta = "q" + estado.getId();
+                if (estado.isAceptacion()) {
+                    etiqueta += "\nT=" + (estado.getToken() >= 0 ? estado.getToken() : "-");
+                }
+                String style = "shape=ellipse;perimeter=ellipsePerimeter;fillColor=#E6F0FF;strokeColor=#3E6FB5;strokeWidth=2;fontColor=#1E335F;";
+                if (estado.isAceptacion()) {
+                    style += "double=1;";
+                }
+                if (afn.getEdoInicial() == estado) {
+                    style += "fillColor=#FFF4CC;strokeColor=#F5A201;";
+                }
+                Object v = graph.insertVertex(parent, null, etiqueta, 0, 0, 90, 50, style);
+                vertices.put(estado, v);
+            }
+            for (Estado estado : afn.getEstados()) {
+                for (Transicion t : estado.getTransiciones()) {
+                    Object origen = vertices.get(estado);
+                    Object destino = vertices.get(t.EdoDestino);
+                    String etiqueta = etiquetaTransicion(t.simboloInf, t.simboloSup);
+                    graph.insertEdge(parent, null, etiqueta, origen, destino);
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+        }
+        mxHierarchicalLayout layout = new mxHierarchicalLayout(graph);
+        layout.setOrientation(mxHierarchicalLayout.ORIENTATION_WEST);
+        layout.execute(parent);
+        mostrarGrafoEnDialogo("AFN: " + nombre, graph);
     }
 
     private void mostrarGrafoAFD(String nombre, AFD afd) {
-        GraphVisualizationPanel panel = GraphVisualizationPanel.fromAFD(afd, this::etiquetaTransicion);
-        mostrarGrafoEnDialogo("AFD: " + nombre, panel);
+        mxGraph graph = new mxGraph();
+        Object parent = graph.getDefaultParent();
+        java.util.Map<Integer, Object> vertices = new HashMap<>();
+        graph.getModel().beginUpdate();
+        try {
+            for (int i = 0; i < afd.getNumEdos(); i++) {
+                EdoAFD edo = afd.getEstado(i);
+                String etiqueta = "S" + i;
+                if (edo.token >= 0) {
+                    etiqueta += "\nT=" + edo.token;
+                }
+                String style = "shape=ellipse;perimeter=ellipsePerimeter;fillColor=#E6F0FF;strokeColor=#1E3C72;strokeWidth=2;fontColor=#1E335F;";
+                if (edo.esAceptacion) {
+                    style += "double=1;";
+                }
+                Object v = graph.insertVertex(parent, null, etiqueta, 0, 0, 90, 50, style);
+                vertices.put(i, v);
+            }
+            java.util.List<Character> simbolos = afd.getSimbolos();
+            for (int i = 0; i < afd.getNumEdos(); i++) {
+                EdoAFD edo = afd.getEstado(i);
+                java.util.Map<Integer, java.util.LinkedHashSet<String>> destinos = new java.util.LinkedHashMap<>();
+                for (char c : simbolos) {
+                    int destino = edo.TransAFD[c & 0xFF];
+                    if (destino >= 0) {
+                        destinos.computeIfAbsent(destino, k -> new java.util.LinkedHashSet<>()).add(etiquetaTransicion(c, c));
+                    }
+                }
+                Object origen = vertices.get(i);
+                for (java.util.Map.Entry<Integer, java.util.LinkedHashSet<String>> entry : destinos.entrySet()) {
+                    Object destino = vertices.get(entry.getKey());
+                    String etiqueta = String.join("/", entry.getValue());
+                    graph.insertEdge(parent, null, etiqueta, origen, destino);
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+        }
+        mxHierarchicalLayout layout = new mxHierarchicalLayout(graph);
+        layout.setOrientation(mxHierarchicalLayout.ORIENTATION_WEST);
+        layout.execute(parent);
+        mostrarGrafoEnDialogo("AFD: " + nombre, graph);
     }
 
-    private void mostrarGrafoEnDialogo(String titulo, GraphVisualizationPanel panel) {
+    private void mostrarGrafoEnDialogo(String titulo, mxGraph graph) {
+        mxGraphComponent component = new mxGraphComponent(graph);
+        component.setConnectable(false);
+        component.getGraphControl().setBackground(Color.WHITE);
         JDialog dialogo = new JDialog(this, titulo, true);
         dialogo.getContentPane().setLayout(new BorderLayout());
-        dialogo.getContentPane().add(new JScrollPane(panel), BorderLayout.CENTER);
+        dialogo.getContentPane().add(component, BorderLayout.CENTER);
 
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panelBotones.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         JButton btnCerrar = new RoundedButton("Cerrar", 8);
         btnCerrar.setBackground(COLOR_AZUL_PRINCIPAL);
         btnCerrar.setForeground(Color.WHITE);
         btnCerrar.addActionListener(ev -> dialogo.dispose());
-        panelBotones.add(btnCerrar);
-        dialogo.getContentPane().add(panelBotones, BorderLayout.SOUTH);
+        panel.add(btnCerrar);
+        dialogo.getContentPane().add(panel, BorderLayout.SOUTH);
 
-        dialogo.setSize(820, 620);
+        dialogo.setSize(800, 600);
         dialogo.setLocationRelativeTo(this);
         dialogo.setVisible(true);
     }
@@ -1717,387 +1507,6 @@ private JPanel createDefaultCard(String title) {
         panelLateral.setVisible(sidebarVisible); // Al darle clic, muestra u oculta el panel lateral
         mainPanel.revalidate();
         mainPanel.repaint();
-    }
-
-    private File asegurarExtensionImagen(File archivo, javax.swing.filechooser.FileFilter filtroSeleccionado) {
-        if (archivo == null) {
-            return null;
-        }
-        String extensionActual = obtenerExtensionArchivo(archivo);
-        if (!extensionActual.isEmpty()) {
-            return archivo;
-        }
-        String extensionPreferida = "png";
-        if (filtroSeleccionado instanceof FileNameExtensionFilter) {
-            String[] extensiones = ((FileNameExtensionFilter) filtroSeleccionado).getExtensions();
-            if (extensiones != null && extensiones.length > 0) {
-                extensionPreferida = extensiones[0];
-            }
-        }
-        File parent = archivo.getAbsoluteFile().getParentFile();
-        String nombre = archivo.getName();
-        return new File(parent, nombre + "." + extensionPreferida);
-    }
-
-    private String obtenerExtensionArchivo(File archivo) {
-        String nombre = archivo.getName();
-        int idx = nombre.lastIndexOf('.');
-        if (idx >= 0 && idx < nombre.length() - 1) {
-            return nombre.substring(idx + 1).toLowerCase();
-        }
-        return "";
-    }
-
-    private String determinarFormatoImagen(File archivo) {
-        String extension = obtenerExtensionArchivo(archivo);
-        if (extension.equals("jpg") || extension.equals("jpeg")) {
-            return "jpg";
-        }
-        return "png";
-    }
-
-    private void exportarTablaComoImagen(JTable tablaFuente, File destino) throws IOException {
-        if (tablaFuente.getModel().getRowCount() == 0) {
-            throw new IOException("La tabla no contiene datos.");
-        }
-
-        JTable tabla = new JTable(tablaFuente.getModel());
-        tabla.setFont(tablaFuente.getFont());
-        tabla.setRowHeight(tablaFuente.getRowHeight());
-        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        tabla.setBackground(Color.WHITE);
-        tabla.setShowGrid(true);
-
-        int columnas = tablaFuente.getColumnModel().getColumnCount();
-        for (int i = 0; i < columnas; i++) {
-            int ancho = tablaFuente.getColumnModel().getColumn(i).getWidth();
-            if (ancho <= 0) {
-                ancho = tablaFuente.getColumnModel().getColumn(i).getPreferredWidth();
-            }
-            tabla.getColumnModel().getColumn(i).setPreferredWidth(ancho);
-        }
-        tabla.doLayout();
-
-        JTableHeader header = tabla.getTableHeader();
-        header.setFont(tablaFuente.getTableHeader().getFont());
-        header.setBackground(Color.WHITE);
-        int width = Math.max(tabla.getPreferredSize().width, 600);
-        int headerHeight = header.getPreferredSize().height;
-        int height = tabla.getPreferredSize().height + headerHeight;
-
-        BufferedImage imagen = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2 = imagen.createGraphics();
-        g2.setColor(Color.WHITE);
-        g2.fillRect(0, 0, width, height);
-
-        header.setSize(width, headerHeight);
-        header.paint(g2);
-        g2.translate(0, headerHeight);
-        tabla.setSize(width, tabla.getPreferredSize().height);
-        tabla.paint(g2);
-        g2.dispose();
-
-        ImageIO.write(imagen, determinarFormatoImagen(destino), destino);
-    }
-
-    @FunctionalInterface
-    private interface TransitionLabelProvider {
-        String format(char simboloInferior, char simboloSuperior);
-    }
-
-    private static final class CapturaToken {
-        final String nombre;
-        final int token;
-
-        CapturaToken(String nombre, int token) {
-            this.nombre = nombre;
-            this.token = token;
-        }
-    }
-
-    private static final class GraphVisualizationPanel extends JPanel {
-        private static final int NODE_RADIUS = 40;
-        private static final Color EDGE_COLOR = new Color(62, 111, 181);
-        private static final Color NODE_FILL = new Color(230, 240, 255);
-        private static final Color NODE_FILL_INICIAL = new Color(255, 244, 204);
-        private static final Color NODE_BORDER = new Color(30, 60, 114);
-
-        private final List<NodeInfo> nodes;
-        private final List<EdgeInfo> edges;
-
-        private GraphVisualizationPanel(List<NodeInfo> nodes, List<EdgeInfo> edges) {
-            this.nodes = nodes;
-            this.edges = edges;
-            setBackground(Color.WHITE);
-            setPreferredSize(new Dimension(780, 560));
-        }
-
-        static GraphVisualizationPanel fromAFN(AFN afn, TransitionLabelProvider labelProvider) {
-            List<NodeInfo> nodes = new ArrayList<>();
-            Map<Estado, NodeInfo> nodeMap = new LinkedHashMap<>();
-            Estado inicial = afn.getEdoInicial();
-            for (Estado estado : afn.getEstados()) {
-                StringBuilder etiqueta = new StringBuilder("q").append(estado.getId());
-                if (estado.isAceptacion()) {
-                    etiqueta.append("\nT=").append(estado.getToken() >= 0 ? estado.getToken() : "-");
-                }
-                NodeInfo info = new NodeInfo(etiqueta.toString(), estado.isAceptacion(), estado == inicial);
-                nodes.add(info);
-                nodeMap.put(estado, info);
-            }
-            List<EdgeInfo> edges = new ArrayList<>();
-            for (Estado estado : afn.getEstados()) {
-                for (Transicion transicion : estado.getTransiciones()) {
-                    NodeInfo origen = nodeMap.get(estado);
-                    NodeInfo destino = nodeMap.get(transicion.EdoDestino);
-                    if (origen != null && destino != null) {
-                        String etiqueta = labelProvider.format(transicion.simboloInf, transicion.simboloSup);
-                        edges.add(new EdgeInfo(origen, destino, etiqueta));
-                    }
-                }
-            }
-            return new GraphVisualizationPanel(nodes, edges);
-        }
-
-        static GraphVisualizationPanel fromAFD(AFD afd, TransitionLabelProvider labelProvider) {
-            List<NodeInfo> nodes = new ArrayList<>();
-            Map<Integer, NodeInfo> nodeMap = new LinkedHashMap<>();
-
-            for (int i = 0; i < afd.getNumEdos(); i++) {
-                EdoAFD edo = afd.getEstado(i);
-                StringBuilder etiqueta = new StringBuilder("S").append(i);
-                if (edo.token >= 0) {
-                    etiqueta.append("\nT=").append(edo.token);
-                }
-                NodeInfo info = new NodeInfo(etiqueta.toString(), edo.esAceptacion, i == 0);
-                nodes.add(info);
-                nodeMap.put(i, info);
-            }
-
-            List<EdgeInfo> edges = new ArrayList<>();
-            List<Character> simbolos = afd.getSimbolos();
-            for (int i = 0; i < afd.getNumEdos(); i++) {
-                EdoAFD edo = afd.getEstado(i);
-                Map<Integer, LinkedHashSet<String>> destinos = new LinkedHashMap<>();
-                for (char simbolo : simbolos) {
-                    int indiceDestino = edo.TransAFD[simbolo & 0xFF];
-                    if (indiceDestino >= 0) {
-                        destinos.computeIfAbsent(indiceDestino, k -> new LinkedHashSet<>())
-                                .add(labelProvider.format(simbolo, simbolo));
-                    }
-                }
-                NodeInfo origen = nodeMap.get(i);
-                for (Map.Entry<Integer, LinkedHashSet<String>> entry : destinos.entrySet()) {
-                    NodeInfo destino = nodeMap.get(entry.getKey());
-                    if (origen != null && destino != null) {
-                        String etiqueta = String.join("\n", entry.getValue());
-                        edges.add(new EdgeInfo(origen, destino, etiqueta));
-                    }
-                }
-            }
-
-            return new GraphVisualizationPanel(nodes, edges);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            if (nodes.isEmpty()) {
-                g2d.dispose();
-                return;
-            }
-
-            positionNodes(getWidth(), getHeight());
-
-            g2d.setStroke(new BasicStroke(2f));
-            for (EdgeInfo edge : edges) {
-                if (edge.origen == null || edge.destino == null) {
-                    continue;
-                }
-                if (edge.origen == edge.destino) {
-                    drawSelfLoop(g2d, edge);
-                } else {
-                    drawEdge(g2d, edge);
-                }
-            }
-
-            for (NodeInfo node : nodes) {
-                drawNode(g2d, node);
-            }
-
-            g2d.dispose();
-        }
-
-        private void positionNodes(int width, int height) {
-            int n = nodes.size();
-            double centerX = width / 2.0;
-            double centerY = height / 2.0;
-            if (n == 1) {
-                NodeInfo único = nodes.get(0);
-                único.x = centerX;
-                único.y = centerY;
-                return;
-            }
-            double radius = Math.min(width, height) / 2.4;
-            if (radius < NODE_RADIUS + 40) {
-                radius = NODE_RADIUS + 40;
-            }
-            double angle = -Math.PI / 2;
-            double step = 2 * Math.PI / n;
-            for (NodeInfo node : nodes) {
-                node.x = centerX + radius * Math.cos(angle);
-                node.y = centerY + radius * Math.sin(angle);
-                angle += step;
-            }
-        }
-
-        private void drawEdge(Graphics2D g2d, EdgeInfo edge) {
-            Point2D start = adjustTowards(edge.origen.point(), edge.destino.point(), NODE_RADIUS);
-            Point2D end = adjustTowards(edge.destino.point(), edge.origen.point(), NODE_RADIUS);
-
-            g2d.setColor(EDGE_COLOR);
-            g2d.draw(new Line2D.Double(start, end));
-            drawArrowHead(g2d, start, end);
-            drawEdgeLabel(g2d, edge.label, start, end);
-        }
-
-        private void drawSelfLoop(Graphics2D g2d, EdgeInfo edge) {
-            NodeInfo node = edge.origen;
-            double startX = node.x - NODE_RADIUS * 0.6;
-            double startY = node.y - NODE_RADIUS;
-            double endX = node.x + NODE_RADIUS * 0.6;
-            double endY = startY;
-            double controlX = node.x;
-            double controlY = node.y - NODE_RADIUS - 60;
-
-            g2d.setColor(EDGE_COLOR);
-            QuadCurve2D.Double curve = new QuadCurve2D.Double(startX, startY, controlX, controlY, endX, endY);
-            g2d.draw(curve);
-
-            Point2D controlPoint = new Point2D.Double(controlX, controlY);
-            Point2D endPoint = new Point2D.Double(endX, endY);
-            drawArrowHead(g2d, controlPoint, endPoint);
-            drawEdgeLabel(g2d, edge.label, controlPoint, endPoint);
-        }
-
-        private void drawEdgeLabel(Graphics2D g2d, String label, Point2D start, Point2D end) {
-            if (label == null || label.isEmpty()) {
-                return;
-            }
-            String[] lines = label.split("\\R");
-            double midX = (start.getX() + end.getX()) / 2.0;
-            double midY = (start.getY() + end.getY()) / 2.0;
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 12f));
-            FontMetrics fm = g2d.getFontMetrics();
-            g2d.setColor(new Color(30, 60, 114));
-            double textHeight = lines.length * fm.getHeight();
-            double currentY = midY - textHeight / 2.0 + fm.getAscent();
-            for (String line : lines) {
-                int textWidth = fm.stringWidth(line);
-                g2d.drawString(line, (float) (midX - textWidth / 2.0), (float) currentY);
-                currentY += fm.getHeight();
-            }
-        }
-
-        private void drawNode(Graphics2D g2d, NodeInfo node) {
-            double diameter = NODE_RADIUS * 2.0;
-            double topLeftX = node.x - NODE_RADIUS;
-            double topLeftY = node.y - NODE_RADIUS;
-
-            g2d.setColor(node.initial ? NODE_FILL_INICIAL : NODE_FILL);
-            g2d.fillOval((int) Math.round(topLeftX), (int) Math.round(topLeftY), (int) Math.round(diameter), (int) Math.round(diameter));
-
-            g2d.setColor(NODE_BORDER);
-            g2d.drawOval((int) Math.round(topLeftX), (int) Math.round(topLeftY), (int) Math.round(diameter), (int) Math.round(diameter));
-
-            if (node.acceptance) {
-                double innerPadding = 6;
-                g2d.drawOval((int) Math.round(topLeftX + innerPadding), (int) Math.round(topLeftY + innerPadding),
-                        (int) Math.round(diameter - innerPadding * 2), (int) Math.round(diameter - innerPadding * 2));
-            }
-
-            drawNodeLabel(g2d, node);
-            if (node.initial) {
-                drawInitialMarker(g2d, node);
-            }
-        }
-
-        private void drawNodeLabel(Graphics2D g2d, NodeInfo node) {
-            String[] lines = node.label.split("\\R");
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 12f));
-            FontMetrics fm = g2d.getFontMetrics();
-            g2d.setColor(NODE_BORDER);
-            double totalHeight = lines.length * fm.getHeight();
-            double currentY = node.y - totalHeight / 2.0 + fm.getAscent();
-            for (String line : lines) {
-                int textWidth = fm.stringWidth(line);
-                g2d.drawString(line, (float) (node.x - textWidth / 2.0), (float) currentY);
-                currentY += fm.getHeight();
-            }
-        }
-
-        private void drawInitialMarker(Graphics2D g2d, NodeInfo node) {
-            double padding = NODE_RADIUS + 25;
-            Point2D end = new Point2D.Double(node.x - NODE_RADIUS, node.y);
-            Point2D start = new Point2D.Double(end.getX() - padding, node.y);
-            g2d.setColor(EDGE_COLOR);
-            g2d.draw(new Line2D.Double(start, end));
-            drawArrowHead(g2d, start, end);
-        }
-
-        private void drawArrowHead(Graphics2D g2d, Point2D start, Point2D end) {
-            double angle = Math.atan2(end.getY() - start.getY(), end.getX() - start.getX());
-            double arrowSize = 10;
-            Path2D.Double path = new Path2D.Double();
-            path.moveTo(end.getX(), end.getY());
-            path.lineTo(end.getX() - arrowSize * Math.cos(angle - Math.PI / 6),
-                    end.getY() - arrowSize * Math.sin(angle - Math.PI / 6));
-            path.lineTo(end.getX() - arrowSize * Math.cos(angle + Math.PI / 6),
-                    end.getY() - arrowSize * Math.sin(angle + Math.PI / 6));
-            path.closePath();
-            g2d.fill(path);
-        }
-
-        private Point2D adjustTowards(Point2D from, Point2D to, double distance) {
-            double angle = Math.atan2(to.getY() - from.getY(), to.getX() - from.getX());
-            return new Point2D.Double(
-                    from.getX() + Math.cos(angle) * distance,
-                    from.getY() + Math.sin(angle) * distance
-            );
-        }
-
-        private static final class NodeInfo {
-            final String label;
-            final boolean acceptance;
-            final boolean initial;
-            double x;
-            double y;
-
-            NodeInfo(String label, boolean acceptance, boolean initial) {
-                this.label = label;
-                this.acceptance = acceptance;
-                this.initial = initial;
-            }
-
-            Point2D point() {
-                return new Point2D.Double(x, y);
-            }
-        }
-
-        private static final class EdgeInfo {
-            final NodeInfo origen;
-            final NodeInfo destino;
-            final String label;
-
-            EdgeInfo(NodeInfo origen, NodeInfo destino, String label) {
-                this.origen = origen;
-                this.destino = destino;
-                this.label = label;
-            }
-        }
     }
 
     private class RoundedPanel extends JPanel {

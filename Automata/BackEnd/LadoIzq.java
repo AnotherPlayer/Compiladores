@@ -1,13 +1,15 @@
 //2° parcial
 
+package BackEnd;
+
 import java.util.ArrayList;
 
 public class LadoIzq {
 
-    SimbolG SimbIzq;
-    ArrayList<SimbolG> LadoDerecho;
+    public SimbolG SimbIzq;
+    public ArrayList<SimbolG> LadoDerecho;
 
-    LadoIzq( SimbolG SimIzq ){
+    public LadoIzq( SimbolG SimIzq ){
 
         this.SimbIzq = SimIzq;
         LadoDerecho = new ArrayList<SimbolG>();
@@ -15,7 +17,7 @@ public class LadoIzq {
 
     }
 
-    void AgregarSimbolo( SimbolG Simbolo ){
+    public void AgregarSimbolo( SimbolG Simbolo ){
 
         LadoDerecho.add( Simbolo );
 

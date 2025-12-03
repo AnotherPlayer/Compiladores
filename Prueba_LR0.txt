@@ -1,0 +1,7 @@
+G->Reglas;
+Reglas->Reglas PC | Reglas Reglas PC;
+Reglas->LadoIzq FLECHA LadosDerechos;
+LadoIzq->SIMBOLO;
+LadosDerechos->LadoDerecho | LadosDerechos OR LadoDerecho;
+LadoDerecho->SecSimbolos;
+SecSimbolos->SIMBOLO | SecSimbolos SIMBOLO

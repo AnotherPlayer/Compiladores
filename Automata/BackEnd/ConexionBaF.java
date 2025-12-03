@@ -1,3 +1,5 @@
+package BackEnd;
+
 //1° parcial
 
 import java.util.HashMap;
@@ -33,6 +35,9 @@ public class ConexionBaF {
 
     // El analizador léxico que usará el AFD actual para analizar cadenas
     private analizadorLexico analizador;
+
+    // Constructor de ER -> AFN por descenso recursivo (2° parcial)
+    private RegexAFNBuilder regexBuilder = new RegexAFNBuilder();
 
     /**
      * CONSTRUCTOR
@@ -402,7 +407,7 @@ public class ConexionBaF {
 
         // Agregar una columna por cada símbolo del alfabeto
         for (Character c : afdActual.alfabeto) {
-            if (c != simbEspeciales.EPSILON) {  // No mostrar epsilon
+            if (c != SimbEspeciales.EPSILON) {  // No mostrar epsilon
                 if (c == ' ') {
                     columnas.add("' '");  // Espacio visible
                 } else {
@@ -424,7 +429,7 @@ public class ConexionBaF {
 
             // Columnas de Transiciones
             for (Character c : afdActual.alfabeto) {
-                if (c != simbEspeciales.EPSILON) {
+                if (c != SimbEspeciales.EPSILON) {
                     int ascii = (int) c;
                     int destino = afdActual.EdosAFD[i].transAFD[ascii];
                     datos[i][col++] = (destino == -1) ? "-" : destino;
@@ -525,10 +530,12 @@ public class ConexionBaF {
      * Borra todos los autómatas creados
      * Útil para empezar de cero
      */
-    public void limpiarTodo() {
+    public String limpiarTodo() {
         automatasAFN.clear();     // Vacía HashMap de AFNs
         automatasAFD.clear();     // Vacía HashMap de AFDs
         afdActual = null;         // Quita AFD actual
+        analizador = new analizadorLexico();
+        return "Espacio de trabajo limpio.";
     }
 
     /**
@@ -556,5 +563,64 @@ public class ConexionBaF {
         analizador.setAutomata(afdActual);
 
         return "AFD '" + nombre + "' establecido como actual";
+    }
+
+    // ========== PIPELINE ER -> AFN -> AFD (2° parcial) ==========
+
+    /**
+     * Construye un AFD léxico a partir de un mapa ER->token.
+     * Convierte cada ER a AFN (descenso recursivo), los une y los determiniza.
+     * Deja el AFD como actual y lo guarda con nombre fijo "AFD_Lexico".
+     */
+    public String construirAFDDesdeExpresiones(java.util.Map<String, Integer> expresiones) {
+        if (expresiones == null || expresiones.isEmpty()) {
+            return "Error: No se proporcionaron expresiones regulares.";
+        }
+        try {
+            AFN afnUnido = null;
+            for (String er : expresiones.keySet()) {
+                int token = expresiones.get(er);
+                AFN afnER = regexBuilder.construir(er, token);
+                if (afnUnido == null) {
+                    afnUnido = afnER;
+                } else {
+                    afnUnido.AFN_union(afnER);
+                }
+            }
+            if (afnUnido == null) {
+                return "Error al construir los AFN.";
+            }
+            afdActual = AFD.AFNtoAFD(afnUnido);
+            analizador.setAutomata(afdActual);
+            automatasAFD.put("AFD_Lexico", afdActual);
+            return "AFD léxico construido y establecido como actual.";
+        } catch (Exception ex) {
+            return "Error al construir AFD desde ER: " + ex.getMessage();
+        }
+    }
+
+    /**
+     * Carga expresiones regulares desde un archivo de texto y construye el AFD léxico.
+     * Formato esperado por línea: token|expresion_regular
+     */
+    public String construirAFDDesdeArchivo(String rutaArchivo) {
+        try {
+            java.util.List<String> lineas = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(rutaArchivo));
+            java.util.HashMap<String, Integer> mapa = new java.util.HashMap<>();
+            for (String l : lineas) {
+                if (l.trim().isEmpty()) continue;
+                String[] partes = l.split("\\|", 2);
+                if (partes.length != 2) continue;
+                int token = Integer.parseInt(partes[0].trim());
+                String er = partes[1].trim();
+                mapa.put(er, token);
+            }
+            if (mapa.isEmpty()) {
+                return "Error: No se encontraron ER válidas en el archivo.";
+            }
+            return construirAFDDesdeExpresiones(mapa);
+        } catch (Exception ex) {
+            return "Error al leer archivo de ER: " + ex.getMessage();
+        }
     }
 }

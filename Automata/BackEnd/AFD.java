@@ -1,14 +1,22 @@
+package BackEnd;
+
 //1° parcial
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Queue;
 import java.util.LinkedList;
-import java.io.*;
+import java.util.List;
+import java.util.Queue;
 
 // Clase AFD según pseudocódigo líneas 471-512
 public class AFD {
 
-    EdoAFD[] EdosAFD;
+    public EdoAFD[] EdosAFD;
     ArrayList<Character> alfabeto;
     int NumEdos;
 
@@ -16,7 +24,7 @@ public class AFD {
     ArrayList<Integer> EdosAceptacion;  // Estados de aceptación
     int EdoInicial;                     // Estado inicial del AFD
 
-    AFD(){
+    public AFD(){
         NumEdos = 0;
         alfabeto = new ArrayList<Character>();
         EdosAceptacion = new ArrayList<Integer>();
@@ -41,7 +49,6 @@ public class AFD {
         NumEdos = n;
         alfabeto = new ArrayList<Character>();
         alfabeto.clear();
-        // Corregir: ArrayList no tiene método union, usar addAll
         alfabeto.addAll(alf);
         EdosAceptacion = new ArrayList<Integer>();
         EdoInicial = 0;
@@ -82,7 +89,7 @@ public class AFD {
 
             // Para cada símbolo del alfabeto
             for(Character simbolo : afn.getAlfabeto()) {
-                if(simbolo == simbEspeciales.EPSILON) continue;
+                if(simbolo == SimbEspeciales.EPSILON) continue;
 
                 // Calcular IrA(SjAct, simbolo)
                 ArrayList<Estado> conjunto = afn.IrA(SjAct.S, simbolo);
@@ -116,7 +123,7 @@ public class AFD {
         // Construir las transiciones
         for(ElemSj sj : C) {
             for(Character simbolo : afn.getAlfabeto()) {
-                if(simbolo == simbEspeciales.EPSILON) continue;
+                if(simbolo == SimbEspeciales.EPSILON) continue;
 
                 ArrayList<Estado> destino = afn.IrA(sj.S, simbolo);
                 if(!destino.isEmpty()) {
@@ -124,6 +131,7 @@ public class AFD {
                     if(indiceDestino != -1) {
                         int ascii = (int)simbolo;
                         afd.EdosAFD[sj.Id].transAFD[ascii] = indiceDestino;
+                        afd.EdosAFD[sj.Id].TransAFD[ascii] = indiceDestino;
                     }
                 }
             }
@@ -133,6 +141,8 @@ public class AFD {
                 if(e.EdoAcept) {
                     afd.EdosAceptacion.add(sj.Id);
                     afd.EdosAFD[sj.Id].Token = e.Token;
+                    afd.EdosAFD[sj.Id].token = e.Token;
+                    afd.EdosAFD[sj.Id].esAceptacion = true;
                     break;
                 }
             }
@@ -176,7 +186,7 @@ public class AFD {
      * SaveAFD - Guardar AFD en archivo
      * Pseudocódigo líneas 571-583
      */
-    boolean SaveAFD( String nameFile ){
+    public boolean SaveAFD( String nameFile ){
         try {
             FileWriter writer = new FileWriter(nameFile);
 
@@ -207,7 +217,7 @@ public class AFD {
 
                 // Guardar transiciones (solo las del alfabeto para ahorrar espacio)
                 for(Character c : alfabeto) {
-                    if(c != simbEspeciales.EPSILON) {
+                    if(c != SimbEspeciales.EPSILON) {
                         int ascii = (int)c;
                         writer.write(EdosAFD[i].transAFD[ascii] + " ");
                     }
@@ -228,7 +238,7 @@ public class AFD {
      * LoadAFD - Cargar AFD desde archivo
      * Pseudocódigo líneas 505-510
      */
-    boolean LoadAFD( String nameFile ){
+    public boolean LoadAFD( String nameFile ){
         try {
             BufferedReader reader = new BufferedReader(new FileReader(nameFile));
 
@@ -264,12 +274,13 @@ public class AFD {
             for(int i = 0; i < NumEdos; i++) {
                 // Leer token del estado
                 EdosAFD[i].Token = Integer.parseInt(reader.readLine());
+                EdosAFD[i].token = EdosAFD[i].Token;
 
                 // Leer transiciones
                 String[] transiciones = reader.readLine().split(" ");
                 int j = 0;
                 for(Character c : alfabeto) {
-                    if(c != simbEspeciales.EPSILON) {
+                    if(c != SimbEspeciales.EPSILON) {
                         int ascii = (int)c;
                         EdosAFD[i].transAFD[ascii] = Integer.parseInt(transiciones[j++]);
                     }
@@ -277,11 +288,81 @@ public class AFD {
             }
 
             reader.close();
+            for (Integer edo : this.EdosAceptacion) {
+                if (edo >= 0 && edo < this.EdosAFD.length) {
+                    this.EdosAFD[edo].esAceptacion = true;
+                }
+            }
             return true;
 
         } catch(Exception e) {
             System.err.println("Error al cargar AFD: " + e.getMessage());
             return false;
+        }
+    }
+
+    // ==== Métodos de apoyo para la GUI ====
+
+    public int getNumEdos() {
+        return NumEdos;
+    }
+
+    public EdoAFD getEstado(int i) {
+        return EdosAFD[i];
+    }
+
+    public List<Character> getSimbolos() {
+        return new ArrayList<>(alfabeto);
+    }
+
+    public TransitionTable buildTransitionTable() {
+        ArrayList<String> headers = new ArrayList<>();
+        headers.add("Estado");
+        for (Character c : alfabeto) {
+            if (c != SimbEspeciales.EPSILON) {
+                headers.add(String.valueOf(c));
+            }
+        }
+        headers.add("Token");
+
+        ArrayList<String[]> rows = new ArrayList<>();
+        for (int i = 0; i < NumEdos; i++) {
+            ArrayList<String> fila = new ArrayList<>();
+            fila.add(String.valueOf(i));
+            for (Character c : alfabeto) {
+                if (c != SimbEspeciales.EPSILON) {
+                    int destino = EdosAFD[i].transAFD[(int) c];
+                    fila.add(destino < 0 ? "-" : String.valueOf(destino));
+                }
+            }
+            fila.add(EdosAFD[i].Token < 0 ? "-" : String.valueOf(EdosAFD[i].Token));
+            rows.add(fila.toArray(new String[0]));
+        }
+        return new TransitionTable(headers, rows);
+    }
+
+    public boolean exportTransitionTable(Path destino) {
+        try {
+            TransitionTable tabla = buildTransitionTable();
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.join("\t", tabla.headers)).append(System.lineSeparator());
+            for (String[] r : tabla.rows) {
+                sb.append(String.join("\t", r)).append(System.lineSeparator());
+            }
+            Files.write(destino, sb.toString().getBytes());
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public static class TransitionTable {
+        public final List<String> headers;
+        public final List<String[]> rows;
+
+        TransitionTable(List<String> headers, List<String[]> rows) {
+            this.headers = headers;
+            this.rows = rows;
         }
     }
 

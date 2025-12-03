@@ -1,25 +1,28 @@
+package BackEnd;
+
 //2° parcial
 
 public class SimbolG {
-    
-    String NombSimb; //V_T y V_N
-	int token;
-	boolean esTerminal;
-    
-    SimbolG( String NombSimb, int token ){
 
-        this.NombSimb = NombSimb;
-        this.token = token;
-        this.esTerminal = false;
+    /** Nombre del símbolo (terminal o no terminal). */
+    public String NombSimb;
+    /** Token asociado (solo aplica para terminales). */
+    public int token;
+    /** Indica si el símbolo es terminal. */
+    public boolean esTerminal;
 
+    public SimbolG(String nombre, int token) {
+        this(nombre, token, false);
     }
 
-    SimbolG( String NombSimb, int token, boolean esTerminal ){
-
-        this.NombSimb = NombSimb;
+    public SimbolG(String nombre, int token, boolean esTerminal) {
+        this.NombSimb = nombre;
         this.token = token;
         this.esTerminal = esTerminal;
-
     }
 
+    @Override
+    public String toString() {
+        return NombSimb;
+    }
 }

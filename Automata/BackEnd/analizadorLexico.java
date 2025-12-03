@@ -1,3 +1,5 @@
+package BackEnd;
+
 //2° parcial
 
 import java.util.Stack;
@@ -209,7 +211,7 @@ public class analizadorLexico {
         // Mostrar alfabeto
         System.out.print("Alfabeto: { ");
         for(Character c : Automata.alfabeto){
-            if(c == simbEspeciales.EPSILON){
+            if(c == SimbEspeciales.EPSILON){
                 System.out.print("ε ");
             } else if(c == ' '){
                 System.out.print("' ' ");
@@ -231,7 +233,7 @@ public class analizadorLexico {
 
         // Encabezados
         for(Character c : Automata.alfabeto){
-            if(c != simbEspeciales.EPSILON){
+            if(c != SimbEspeciales.EPSILON){
                 if(c == ' '){
                     System.out.print("' '\t");
                 } else {
@@ -246,7 +248,7 @@ public class analizadorLexico {
             System.out.print(i + "\t");
 
             for(Character c : Automata.alfabeto){
-                if(c != simbEspeciales.EPSILON){
+                if(c != SimbEspeciales.EPSILON){
                     int ascii = (int)c;
                     int destino = Automata.EdosAFD[i].transAFD[ascii];
                     if(destino == -1){

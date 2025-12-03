@@ -1,3 +1,5 @@
+package BackEnd;
+
 //1° parcial
 
 import java.util.ArrayList;
@@ -10,12 +12,28 @@ public class Estado {
     ArrayList<Transicion> Transiciones; 
     static int NumEstados = 0;
 
-    Estado(){
+    public Estado(){
         IdEdo = NumEstados++;
         EdoAcept = false;
         Token = -1;
         Transiciones = new ArrayList<Transicion>();
         Transiciones.clear();
+    }
+
+    public int getId() {
+        return IdEdo;
+    }
+
+    public boolean isAceptacion() {
+        return EdoAcept;
+    }
+
+    public int getToken() {
+        return Token;
+    }
+
+    public ArrayList<Transicion> getTransiciones() {
+        return Transiciones;
     }
 
     // Método TieneTransicion del pseudocódigo (línea 403-414)

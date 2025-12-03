@@ -1,0 +1,10 @@
+G->Reglas;
+Reglas->Regla PC ReglasP;
+ReglasP->Regla PC ReglasP | EPSILON;
+Regla->LadoIzq FLECHA LadosDerechos;
+LadoIzq->SIMBOLO;
+LadosDerechos->LadoDerecho LadosDerechosP
+LadosDerechosP->LadoDerecho LadosDerechosP;
+LadoDerecho->SecSimbolos;
+SecSimbolos->SIMBOLO SecSimbolosP;
+SecSimbolosP->SIMBOLO SecSimbolosP | EPSILON;

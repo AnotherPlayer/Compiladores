@@ -5,6 +5,12 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.*;
+
+import BackEnd.Gramatica;
+import BackEnd.LadoIzq;
+import BackEnd.LL1;
+import BackEnd.SimbolG;
 
 public class PanelAnalisisLL1 extends JPanel {
 
@@ -21,6 +27,9 @@ public class PanelAnalisisLL1 extends JPanel {
 	private JTable tablaLL1;
 	private JTable tablaLexemaToken;
 	private JTable tablaPilaCadena;
+
+	private Gramatica gramaticaActual;
+	private LL1.TablaLL1 tablaActual;
 
 	public PanelAnalisisLL1() {
 		inicializarComponentes();
@@ -359,10 +368,21 @@ public class PanelAnalisisLL1 extends JPanel {
 
 	private void btnCrearTablaActionPerformed(ActionEvent evt) {
 		String gramatica = areaGramatica.getText();
-		JOptionPane.showMessageDialog(this,
-			"Creando tabla LL(1) para:\n" + gramatica,
-			"Proceso LL(1)",
-			JOptionPane.INFORMATION_MESSAGE);
+		try {
+			gramaticaActual = Gramatica.desdeTexto(gramatica);
+			LL1 constructor = new LL1();
+			tablaActual = constructor.construir(gramaticaActual);
+			llenarTablasVnVt();
+			llenarTablaLL1();
+			JOptionPane.showMessageDialog(this,
+				"Tabla LL(1) generada usando el pseudocódigo de los apuntes.",
+				"Proceso LL(1)",
+				JOptionPane.INFORMATION_MESSAGE);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this,
+				"Error al construir la tabla LL(1): " + ex.getMessage(),
+				"Error", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	private void btnProbarLexicoActionPerformed(ActionEvent evt) {
@@ -399,10 +419,13 @@ public class PanelAnalisisLL1 extends JPanel {
 
 	private void btnAnalizarSintacticamenteActionPerformed(ActionEvent e) {
 		String sigma = txtSigma.getText();
-		JOptionPane.showMessageDialog(this,
-			"Analizando sintácticamente: " + sigma,
-			"Análisis Sintáctico LL(1)",
-			JOptionPane.INFORMATION_MESSAGE);
+		if (gramaticaActual == null || tablaActual == null) {
+			JOptionPane.showMessageDialog(this,
+				"Primero genera la tabla LL(1).",
+				"Falta tabla", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		simularAnalisisLL1(sigma);
 	}
 
 	public JTextArea getAreaGramatica() { return areaGramatica; }
@@ -415,4 +438,107 @@ public class PanelAnalisisLL1 extends JPanel {
 	public File getArchivoAFDLexico() { return archivoAFDLexico; }
 	public JButton getBtnCrearTabla() { return btnCrearTabla; }
 	public JButton getBtnAnalizarSintacticamente() { return btnAnalizarSintacticamente; }
+
+	// === Métodos de apoyo (pseudocódigo de los apuntes) ===
+
+	private void llenarTablasVnVt() {
+		DefaultTableModel ntModel = new DefaultTableModel(new Object[]{"NoTerminal"}, 0);
+		for (SimbolG nt : gramaticaActual.Vn) ntModel.addRow(new Object[]{nt.NombSimb});
+		tablaNoTerminal.setModel(ntModel);
+
+		DefaultTableModel tModel = new DefaultTableModel(new Object[]{"Terminal", "Token"}, 0);
+		for (SimbolG t : gramaticaActual.Vt) tModel.addRow(new Object[]{t.NombSimb, t.token});
+		tablaTerminalToken.setModel(tModel);
+	}
+
+	private void llenarTablaLL1() {
+		if (tablaActual == null) return;
+		ArrayList<String> cols = new ArrayList<>(tablaActual.terminales);
+		cols.add(0, "NT");
+		DefaultTableModel model = new DefaultTableModel(cols.toArray(), 0);
+		for (String nt : tablaActual.noTerminales) {
+			Object[] fila = new Object[cols.size()];
+			fila[0] = nt;
+			for (int i = 1; i < cols.size(); i++) {
+				String term = cols.get(i);
+				Integer regla = tablaActual.tabla.getOrDefault(nt, Collections.emptyMap()).get(term);
+				fila[i] = (regla == null) ? "" : regla;
+			}
+			model.addRow(fila);
+		}
+		tablaLL1.setModel(model);
+	}
+
+	private void simularAnalisisLL1(String cadena) {
+		DefaultTableModel pilaCadena = new DefaultTableModel(new Object[]{"Pila", "Cadena", "Acción"}, 0);
+		if (cadena == null) cadena = "";
+		List<String> tokens = new ArrayList<>(Arrays.asList(cadena.trim().split("\\s+")));
+		if (tokens.size() == 1 && tokens.get(0).isEmpty()) tokens.clear();
+		tokens.add(Gramatica.FIN_CADENA);
+
+		Deque<String> pila = new ArrayDeque<>();
+		pila.push(Gramatica.FIN_CADENA);
+		pila.push(gramaticaActual.SimbIni.NombSimb);
+
+		int idx = 0;
+		boolean aceptado = false;
+		while (idx < tokens.size() && !pila.isEmpty()) {
+			String a = tokens.get(idx);
+			String X = pila.peek();
+			if (X.equals(a)) {
+				pilaCadena.addRow(new Object[]{pilaToString(pila), resto(tokens, idx), "match " + a});
+				pila.pop();
+				idx++;
+			} else if (esTerminal(X)) {
+				pilaCadena.addRow(new Object[]{pilaToString(pila), resto(tokens, idx), "error"});
+				break;
+			} else {
+				Integer reglaIdx = tablaActual.tabla.getOrDefault(X, Collections.emptyMap()).get(a);
+				if (reglaIdx == null) {
+					pilaCadena.addRow(new Object[]{pilaToString(pila), resto(tokens, idx), "error"});
+					break;
+				}
+				LadoIzq r = gramaticaActual.Reglas.get(reglaIdx);
+				pila.pop();
+				List<SimbolG> alpha = new ArrayList<>(r.LadoDerecho);
+				Collections.reverse(alpha);
+				for (SimbolG s : alpha) {
+					if (!s.NombSimb.equals(Gramatica.EPS)) pila.push(s.NombSimb);
+				}
+				pilaCadena.addRow(new Object[]{pilaToString(pila), resto(tokens, idx),
+					"usar r" + reglaIdx + ": " + r.SimbIzq.NombSimb + "->" + rhsToString(r)});
+			}
+			if (pila.size() == 1 && pila.peek().equals(Gramatica.FIN_CADENA) && a.equals(Gramatica.FIN_CADENA)) {
+				aceptado = true;
+				break;
+			}
+		}
+		if (aceptado) {
+			pilaCadena.addRow(new Object[]{pilaToString(pila), resto(tokens, idx), "aceptar"});
+		}
+		tablaPilaCadena.setModel(pilaCadena);
+	}
+
+	private boolean esTerminal(String simbolo) {
+		for (SimbolG s : gramaticaActual.Vt) if (s.NombSimb.equals(simbolo)) return true;
+		return simbolo.equals(Gramatica.FIN_CADENA);
+	}
+
+	private String pilaToString(Deque<String> pila) {
+		return String.join(" ", pila);
+	}
+
+	private String resto(List<String> tokens, int idx) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = idx; i < tokens.size(); i++) {
+			sb.append(tokens.get(i)).append(" ");
+		}
+		return sb.toString().trim();
+	}
+
+	private String rhsToString(LadoIzq r) {
+		StringBuilder sb = new StringBuilder();
+		for (SimbolG s : r.LadoDerecho) sb.append(s.NombSimb).append(" ");
+		return sb.toString().trim();
+	}
 }

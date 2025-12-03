@@ -58,6 +58,7 @@ import BackEnd.Transicion;
 import BackEnd.EdoAFD;
 import BackEnd.SimbEspeciales;
 import BackEnd.AFD;
+import BackEnd.RegexAFNBuilder;
 
 public class AutomataMenuGUI extends JFrame {
 
@@ -87,6 +88,7 @@ public class AutomataMenuGUI extends JFrame {
     private final List<String> createdAfdNames = new ArrayList<>();
     private final Map<String, AFD> afdMap = new HashMap<>();
     private final Map<Character, Integer> tokenPorSimbolo = new HashMap<>();
+    private final RegexAFNBuilder regexBuilder = new RegexAFNBuilder();
     private int nextTokenValue = 40;
 
     // JComboBoxes para las operaciones
@@ -217,12 +219,15 @@ public class AutomataMenuGUI extends JFrame {
         JMenu menuHerramientas = createBaseMenu("Herramientas", "herramientas.png");
         JMenuItem itemConvAFNtoAFD = new JMenuItem("Convertir AFN a AFD");
         JMenuItem itemMinimizacion = new JMenuItem("Minimizar AFD");
+        JMenuItem itemRegexToAFD = new JMenuItem("AFD desde ER (archivo)");
         
         itemConvAFNtoAFD.addActionListener(e -> showConversionDialog()); // Al darle clic se abre el diálogo de conversión
         itemMinimizacion.addActionListener(e -> showMinimizationDialog()); // Al darle clic se abre el diálogo de minimización
+        itemRegexToAFD.addActionListener(e -> construirAFDDesdeArchivoER());
 
         menuHerramientas.add(itemConvAFNtoAFD);
         menuHerramientas.add(itemMinimizacion);
+        menuHerramientas.add(itemRegexToAFD);
         menuBar.add(menuHerramientas);
 
         // =======================================================
@@ -255,8 +260,71 @@ public class AutomataMenuGUI extends JFrame {
         
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
-            // Lógica pendiente: llamar a AFD.SaveAFD(fileToSave.getAbsolutePath())
-            JOptionPane.showMessageDialog(this, "Autómata guardado exitosamente en:\n" + fileToSave.getAbsolutePath(), "Guardado Completo", JOptionPane.INFORMATION_MESSAGE);
+            if (comboMostrarAFD == null || comboMostrarAFD.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(this, "No hay AFD seleccionados para guardar.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String seleccionado = (String) comboMostrarAFD.getSelectedItem();
+            AFD afd = afdMap.get(seleccionado);
+            if (afd == null) {
+                JOptionPane.showMessageDialog(this, "No se pudo recuperar el AFD seleccionado.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            boolean ok = afd.SaveAFD(fileToSave.getAbsolutePath());
+            if (ok) {
+                JOptionPane.showMessageDialog(this, "AFD guardado exitosamente en:\n" + fileToSave.getAbsolutePath(), "Guardado Completo", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "No se pudo guardar el AFD.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // Construye un AFD léxico desde un archivo de ER (formato: token|expresion_regular)
+    private void construirAFDDesdeArchivoER() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Selecciona archivo de ER (token|ER)");
+        int res = chooser.showOpenDialog(this);
+        if (res != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File archivo = chooser.getSelectedFile();
+        try {
+            java.util.List<String> lineas = java.nio.file.Files.readAllLines(archivo.toPath());
+            AFN unido = null;
+            for (String l : lineas) {
+                if (l == null) continue;
+                String linea = l.trim();
+                if (linea.isEmpty() || linea.startsWith("#")) continue;
+                String[] partes = linea.split("\\|", 2);
+                if (partes.length != 2) continue;
+                int token = Integer.parseInt(partes[0].trim());
+                String er = partes[1].trim();
+                AFN afn = regexBuilder.construir(er, token);
+                if (unido == null) {
+                    unido = afn;
+                } else {
+                    unido.AFN_union(afn);
+                }
+            }
+            if (unido == null) {
+                JOptionPane.showMessageDialog(this, "No se construyó ningún AFN. Revisa el archivo.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            AFD afd = unido.toAFD();
+            String base = archivo.getName();
+            if (base.contains(".")) {
+                base = base.substring(0, base.lastIndexOf('.'));
+            }
+            String nombreAFD = base + "_AFD";
+            int suf = 1;
+            while (afdMap.containsKey(nombreAFD)) {
+                nombreAFD = base + "_AFD_" + (suf++);
+            }
+            registerAFD(nombreAFD, afd);
+            JOptionPane.showMessageDialog(this, "AFD construido y registrado como '" + nombreAFD + "'.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            showAfdDetails("AFD generado", nombreAFD, afd);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error al construir AFD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -269,9 +337,20 @@ public class AutomataMenuGUI extends JFrame {
         
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToLoad = fileChooser.getSelectedFile();
-            // Lógica pendiente: llamar a AFD.LoadAFD(fileToLoad.getAbsolutePath())
-            JOptionPane.showMessageDialog(this, "Autómata cargado desde:\n" + fileToLoad.getAbsolutePath(), "Carga Completa", JOptionPane.INFORMATION_MESSAGE);
-            // Si la carga es exitosa, se actualizaría la interfaz con los datos del autómata.
+            try {
+                AFD afd = new AFD();
+                boolean ok = afd.LoadAFD(fileToLoad.getAbsolutePath());
+                if (ok) {
+                    String nombreAFD = fileToLoad.getName();
+                    registerAFD(nombreAFD, afd);
+                    JOptionPane.showMessageDialog(this, "Autómata cargado desde:\n" + fileToLoad.getAbsolutePath(), "Carga Completa", JOptionPane.INFORMATION_MESSAGE);
+                    showAfdDetails("AFD cargado", nombreAFD, afd);
+                } else {
+                    JOptionPane.showMessageDialog(this, "No se pudo cargar el AFD.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al cargar AFD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
     

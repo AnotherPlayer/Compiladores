@@ -66,6 +66,7 @@ public class analizadorLexico {
 
     // Método yylex según pseudocódigo líneas 587-650
     public int yylex(){
+
         // Caso base
         if(IndiceCaracterActual >= CadenaSigma.length()){
             Token = -1;
@@ -101,12 +102,15 @@ public class analizadorLexico {
                     break;  // No hay transición válida
                 }
                 est_actual = destino;
-            } else {
+            }
+            
+            else {
                 break;  // Carácter fuera de rango
             }
 
             // Verificar si es estado de aceptación
             boolean esAceptacion = false;
+
             for(Integer edoAcept : Automata.EdosAceptacion){
                 if(edoAcept == est_actual){
                     esAceptacion = true;
@@ -115,6 +119,7 @@ public class analizadorLexico {
             }
 
             if(esAceptacion){
+
                 EdoAFD edoDestino = Automata.EdosAFD[est_actual];
                 int token_valido_actual = edoDestino.Token;
 
@@ -147,7 +152,9 @@ public class analizadorLexico {
             Token = token_valido;
 
             return token_valido;
-        } else {
+        }
+        
+        else {
             // Si no se encontró lexema válido, avanzar uno y devolver error
             if(IndiceCaracterActual < CadenaSigma.length()){
                 yytext = String.valueOf(CadenaSigma.charAt(IndiceCaracterActual));
@@ -157,7 +164,9 @@ public class analizadorLexico {
                 IndiceCaracterActual++;
                 Token = -1; 
             }
+
             return -1;  // Error
+            
         }
     }
 
@@ -177,7 +186,9 @@ public class analizadorLexico {
 
     // Método para obtener todos los tokens de la cadena
     public void AnalizarCadena(String cadena){
+
         SetSigma(cadena);
+
         System.out.println("\n=== Análisis Léxico de: \"" + cadena + "\" ===\n");
 
         int token;
@@ -190,7 +201,9 @@ public class analizadorLexico {
         if(IndiceCaracterActual < CadenaSigma.length()){
             System.out.println("\nCadena no completamente analizada.");
             System.out.println("Resto: \"" + CadenaSigma.substring(IndiceCaracterActual) + "\"");
-        } else {
+        }
+        
+        else {
             System.out.println("\nAnálisis completo.");
         }
     }

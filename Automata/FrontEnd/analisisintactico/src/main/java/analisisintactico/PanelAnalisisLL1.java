@@ -7,10 +7,11 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.*;
 
-import BackEnd.Gramatica;
-import BackEnd.LadoIzq;
-import BackEnd.LL1;
-import BackEnd.SimbolG;
+// IMPORTS DE BACKEND COMENTADOS
+// import BackEnd.Gramatica;
+// import BackEnd.LadoIzq;
+// import BackEnd.LL1;
+// import BackEnd.SimbolG;
 
 public class PanelAnalisisLL1 extends JPanel {
 
@@ -28,8 +29,9 @@ public class PanelAnalisisLL1 extends JPanel {
 	private JTable tablaLexemaToken;
 	private JTable tablaPilaCadena;
 
-	private Gramatica gramaticaActual;
-	private LL1.TablaLL1 tablaActual;
+	// VARIABLES DE BACKEND COMENTADAS
+	// private Gramatica gramaticaActual;
+	// private LL1.TablaLL1 tablaActual;
 
 	public PanelAnalisisLL1() {
 		inicializarComponentes();
@@ -362,11 +364,18 @@ public class PanelAnalisisLL1 extends JPanel {
 		));
 
 		tablaPilaCadena.setModel(new DefaultTableModel(
-			new Object[]{"Pila", "Cadena"}, 0
+			new Object[]{"Pila", "Cadena", "Acción"}, 0
 		));
 	}
 
 	private void btnCrearTablaActionPerformed(ActionEvent evt) {
+		// FUNCIONALIDAD BACKEND COMENTADA
+		JOptionPane.showMessageDialog(this,
+			"Funcionalidad temporalmente deshabilitada.\nNecesita conexión con BackEnd.",
+			"En desarrollo",
+			JOptionPane.INFORMATION_MESSAGE);
+		
+		/*
 		String gramatica = areaGramatica.getText();
 		try {
 			gramaticaActual = Gramatica.desdeTexto(gramatica);
@@ -383,6 +392,7 @@ public class PanelAnalisisLL1 extends JPanel {
 				"Error al construir la tabla LL(1): " + ex.getMessage(),
 				"Error", JOptionPane.ERROR_MESSAGE);
 		}
+		*/
 	}
 
 	private void btnProbarLexicoActionPerformed(ActionEvent evt) {
@@ -418,6 +428,13 @@ public class PanelAnalisisLL1 extends JPanel {
 	}
 
 	private void btnAnalizarSintacticamenteActionPerformed(ActionEvent e) {
+		// FUNCIONALIDAD BACKEND COMENTADA
+		JOptionPane.showMessageDialog(this,
+			"Funcionalidad temporalmente deshabilitada.\nNecesita conexión con BackEnd.",
+			"En desarrollo",
+			JOptionPane.INFORMATION_MESSAGE);
+		
+		/*
 		String sigma = txtSigma.getText();
 		if (gramaticaActual == null || tablaActual == null) {
 			JOptionPane.showMessageDialog(this,
@@ -426,6 +443,7 @@ public class PanelAnalisisLL1 extends JPanel {
 			return;
 		}
 		simularAnalisisLL1(sigma);
+		*/
 	}
 
 	public JTextArea getAreaGramatica() { return areaGramatica; }
@@ -439,8 +457,9 @@ public class PanelAnalisisLL1 extends JPanel {
 	public JButton getBtnCrearTabla() { return btnCrearTabla; }
 	public JButton getBtnAnalizarSintacticamente() { return btnAnalizarSintacticamente; }
 
-	// === Métodos de apoyo (pseudocódigo de los apuntes) ===
-
+	// === MÉTODOS DE BACKEND COMENTADOS ===
+	
+	/*
 	private void llenarTablasVnVt() {
 		DefaultTableModel ntModel = new DefaultTableModel(new Object[]{"NoTerminal"}, 0);
 		for (SimbolG nt : gramaticaActual.Vn) ntModel.addRow(new Object[]{nt.NombSimb});
@@ -541,4 +560,5 @@ public class PanelAnalisisLL1 extends JPanel {
 		for (SimbolG s : r.LadoDerecho) sb.append(s.NombSimb).append(" ");
 		return sb.toString().trim();
 	}
+	*/
 }

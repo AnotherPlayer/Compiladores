@@ -37,6 +37,7 @@ public class PanelAnalizarCadena extends JPanel {
 
             JButton btnAnalizar = botonAzul("Analizar Cadena");
             btnAnalizar.addActionListener((ActionEvent e) -> {
+                @SuppressWarnings("unused")
                 String afdSeleccionado = (String) comboAFD.getSelectedItem();
                 String cadena = txtCadena.getText();
                 

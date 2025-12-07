@@ -10,6 +10,7 @@ public class PanelCrearAFNBasico2char extends JPanel {
 
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
+    @SuppressWarnings("unused")
     private final List<String> currentAfnNames;
 
     public PanelCrearAFNBasico2char(List<String> currentAfnNames) {

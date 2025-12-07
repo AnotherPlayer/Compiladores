@@ -68,7 +68,7 @@ public class AnalisisSintacticoGUI extends JFrame {
     private void aplicarEstilosGlobales() {
 
         Font fuenteGeneral = new Font("Segoe UI", Font.PLAIN, 16);
-        Font fuenteNegrita = new Font("Segoe UI", Font.BOLD, 22);
+        //Font fuenteNegrita = new Font("Segoe UI", Font.BOLD, 22);
 
         UIManager.put("Label.font", fuenteGeneral);
         UIManager.put("Button.font", fuenteGeneral);
@@ -485,6 +485,7 @@ public class AnalisisSintacticoGUI extends JFrame {
         p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
     }
     
+    @SuppressWarnings("unused")
     private void mensaje(String msg) {
         JOptionPane.showMessageDialog(this, msg);
     }

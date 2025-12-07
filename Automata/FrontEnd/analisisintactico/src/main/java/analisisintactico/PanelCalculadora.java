@@ -16,12 +16,12 @@ public class PanelCalculadora extends JPanel {
 
 	private JPanel panelBotonesCalculadora;
 
-	private static final Color DARK_BACKGROUND = new Color(48, 51, 56);
+	//private static final Color DARK_BACKGROUND = new Color(48, 51, 56);
 	private static final Color BUTTON_DARK = new Color(40, 43, 49);
 	private static final Color BUTTON_FUNCTION = new Color(75, 80, 88);
 	private static final Color BUTTON_EQUAL_OP = new Color(138, 180, 248);
-	private static final Color TEXT_COLOR = Color.WHITE;
-	private static final Color ACCENT_COLOR = new Color(255, 185, 0);
+	//private static final Color TEXT_COLOR = Color.WHITE;
+	//private static final Color ACCENT_COLOR = new Color(255, 185, 0);
 
 	private final String[] buttons = {
 		"RAD", "DEG", "AC", "DEL", "%", "/",

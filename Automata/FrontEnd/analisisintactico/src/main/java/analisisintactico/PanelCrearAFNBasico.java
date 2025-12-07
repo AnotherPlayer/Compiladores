@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 public class PanelCrearAFNBasico extends JPanel { 
 
+    @SuppressWarnings("unused")
     private final List<String> currentAfnNames; 
     
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);

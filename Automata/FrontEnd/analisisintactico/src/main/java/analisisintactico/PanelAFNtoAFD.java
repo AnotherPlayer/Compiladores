@@ -11,6 +11,7 @@ public class PanelAFNtoAFD extends JPanel {
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
     
     private final List<String> availableAfnNames;
+    @SuppressWarnings("unused")
     private final List<String> currentAfdNames;
 
     public PanelAFNtoAFD(List<String> currentAfnNames, List<String> currentAfdNames) {

@@ -22,5 +22,11 @@ public class LadoIzq {
         LadoDerecho.add( Simbolo );
 
     }
+
+    public void AgregarSimboloArray( ArrayList<SimbolG> Simbolos ){
+        
+        LadoDerecho.addAll( Simbolos );
+
+    }
     
 }

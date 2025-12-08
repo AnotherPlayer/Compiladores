@@ -4,21 +4,24 @@ package BackEnd;
 
 public class SimbolG {
 
-    /** Nombre del símbolo (terminal o no terminal). */
     public String NombSimb;
-    /** Token asociado (solo aplica para terminales). */
     public int token;
-    /** Indica si el símbolo es terminal. */
     public boolean esTerminal;
 
     public SimbolG(String nombre, int token) {
-        this(nombre, token, false);
+        this.NombSimb = nombre;
+        this.token = token;
+        this.esTerminal = false;
     }
 
     public SimbolG(String nombre, int token, boolean esTerminal) {
         this.NombSimb = nombre;
         this.token = token;
         this.esTerminal = esTerminal;
+    }
+
+    public void cambiarToken(int nuevoToken) {
+        this.token = nuevoToken;
     }
 
     @Override

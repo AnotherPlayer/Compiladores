@@ -4,7 +4,6 @@ package BackEnd;
 
 import java.util.ArrayList;
 
-// Clase ElemSj según pseudocódigo líneas 427-441
 public class ElemSj {
 
     int Id;
@@ -16,7 +15,6 @@ public class ElemSj {
         S.clear();
     }
 
-    // Constructor adicional para facilitar el uso
     ElemSj(int id){
         Id = id;
         S = new ArrayList<Estado>();

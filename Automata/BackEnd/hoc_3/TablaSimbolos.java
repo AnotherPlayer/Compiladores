@@ -145,6 +145,12 @@ public class TablaSimbolos {
         s.SetSymbol("abs", EnumTipoSymbol.BLTIN, EnumBLTIN.ABS);
         ListaSimbolos.add(s);
 
+        //JumpTrue
+        //s = new SymbolHoc();
+
+        //JumpFalse
+        //s = new SymbolHoc();
+
     }
 
 }

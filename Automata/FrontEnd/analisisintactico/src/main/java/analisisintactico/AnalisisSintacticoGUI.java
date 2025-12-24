@@ -34,6 +34,7 @@ public class AnalisisSintacticoGUI extends JFrame {
     private JMenu menuAFNs;
     private JMenu menuAnalizadorLexico;
     private JMenu menuAnalisisSintactico;
+    private JMenu menuCalculadorasHoc;
 
     // Menú AFNs
     private JMenuItem menuItemBasicoAFN;
@@ -56,6 +57,11 @@ public class AnalisisSintacticoGUI extends JFrame {
     private JMenuItem menuItemAbrirGramatica;
     private JMenuItem menuItemAbrirLL1;
     private JMenuItem menuItemAbrirSLR;
+    
+    // Menú Calculadoras hoc
+    private JMenuItem menuItemHoc3;
+    private JMenuItem menuItemHoc4;
+    private JMenuItem menuItemHoc5;
 
     public AnalisisSintacticoGUI() {
         aplicarEstilosGlobales();
@@ -113,7 +119,7 @@ public class AnalisisSintacticoGUI extends JFrame {
      * -------------------------- */
     private void initComponents() {
 
-        setTitle("Análisis Sintáctico");
+        setTitle("Compiladores");
         setSize(1000, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -214,11 +220,33 @@ public class AnalisisSintacticoGUI extends JFrame {
         menuAnalisisSintactico.add(menuItemAbrirGramatica);
         menuAnalisisSintactico.add(menuItemAbrirLL1);
         menuAnalisisSintactico.add(menuItemAbrirSLR);
+        
+        // =======================================================
+        // MENÚ DE CALCULADORAS HOC
+        // =======================================================
+        menuCalculadorasHoc = new JMenu("Calculadoras Hoc");
+        menuCalculadorasHoc.setForeground(blanco);
 
+        menuItemHoc3 = new JMenuItem("Hoc 3");
+        menuItemHoc3.addActionListener(e -> abrirDialogHoc3());
+
+        menuItemHoc4 = new JMenuItem("Hoc 4");
+        menuItemHoc4.addActionListener(e -> abrirDialogHoc4()); 
+
+        menuItemHoc5 = new JMenuItem("Hoc 5");
+        menuItemHoc5.addActionListener(e -> abrirDialogHoc5());
+
+        menuCalculadorasHoc.add(menuItemHoc3);
+        menuCalculadorasHoc.add(menuItemHoc4);
+        menuCalculadorasHoc.add(menuItemHoc5);
+        
+        
         menuBar.add(menuAFNs);
         menuBar.add(menuAnalizadorLexico);
         menuBar.add(menuAnalisisSintactico);
+        menuBar.add(menuCalculadorasHoc);
         setJMenuBar(menuBar);
+        
 
         /** Panel Principal */
         panelContenidoPrincipal = new JPanel(new GridBagLayout());
@@ -229,7 +257,7 @@ public class AnalisisSintacticoGUI extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
 
         // Título
-        JLabel titulo = new JLabel("Bienvenido al Sistema de Análisis Sintáctico");
+        JLabel titulo = new JLabel("Bienvenido");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 32));
         titulo.setForeground(new Color(13, 71, 161));
         panelContenidoPrincipal.add(titulo, gbc);
@@ -470,6 +498,45 @@ public class AnalisisSintacticoGUI extends JFrame {
         dialog.setLocationRelativeTo(this);
 
         PanelAnalisisLL1 panel = new PanelAnalisisLL1();
+        estilizarPanelDialog(panel);
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private void abrirDialogHoc3() {
+        JDialog dialog = new JDialog(this, "Hoc 3", true);
+        dialog.setSize(700, 700);
+        dialog.getContentPane().setBackground(Color.WHITE);
+        dialog.setLocationRelativeTo(this);
+
+        PanelHoc3 panel = new PanelHoc3();
+        estilizarPanelDialog(panel);
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private void abrirDialogHoc4() {
+        JDialog dialog = new JDialog(this, "Hoc 4", true);
+        dialog.setSize(1300, 700);
+        dialog.getContentPane().setBackground(Color.WHITE);
+        dialog.setLocationRelativeTo(this);
+
+        PanelHoc4 panel = new PanelHoc4();
+        estilizarPanelDialog(panel);
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private void abrirDialogHoc5() {
+        JDialog dialog = new JDialog(this, "Hoc 5", true);
+        dialog.setSize(1300, 700);
+        dialog.getContentPane().setBackground(Color.WHITE);
+        dialog.setLocationRelativeTo(this);
+
+        PanelHoc5 panel = new PanelHoc5();
         estilizarPanelDialog(panel);
 
         dialog.add(panel);

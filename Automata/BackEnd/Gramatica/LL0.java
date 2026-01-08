@@ -1,9 +1,9 @@
 package BackEnd;
 
 //2° parcial
-
 import java.util.ArrayList;
 import java.util.Stack;
+import BackEnd.*;
 
 import BackEnd.Gramatica;
 import BackEnd.SimbEspeciales;

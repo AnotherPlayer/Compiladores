@@ -1,13 +1,23 @@
+package BackEnd;
+
 //2° parcial
 
-import BackEnd.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
 
 public class Gramatica {
+
+    public static final String FIN_CADENA = "$";
 
     public int numReglas;
 
@@ -99,9 +109,9 @@ public class Gramatica {
         // ====================== Primera sección ======================
         ArrayList<String> lineas = new ArrayList<String>();
         try{
-            File archivo = new File("BackEnd/Prueba_LL1.txt");
-            if( !archivo.exists() ){
-                archivo = new File("PruebaLL1.txt");
+            File archivo = localizarArchivoGramatica();
+            if(archivo == null){
+                throw new IOException("No se encontró Prueba_LL1.txt");
             }
             BufferedReader br = new BufferedReader( new FileReader( archivo ) );
             String linea;
@@ -175,87 +185,168 @@ public class Gramatica {
                 }
             }
         }
+
     }
 
-    public ArrayList<SimbolG> First( ArrayList<SimbolG> l ){
-        
-        ArrayList<SimbolG> R = new ArrayList<SimbolG>();
-	    R.clear();
-	
-	    //Criterio para detener recursión
-	    if( l.get(0).esTerminal ){
-	
-    		R.add( l.get(0) );
-		    return R;
-	
-	    }
-	
-	    for( int i=0 ; i<numReglas ; i++ ){
+    private File localizarArchivoGramatica() {
+        Path[] candidatos = new Path[] {
+            Paths.get("Prueba_LL1.txt"),
+            Paths.get("Automata/BackEnd/Prueba_LL1.txt"),
+            Paths.get("BackEnd/Prueba_LL1.txt")
+        };
+        for(Path p : candidatos){
+            if(Files.exists(p)){
+                return p.toFile();
+            }
+        }
+        return null;
+    }
 
-		    if( Reglas.get(i).SimbIzq.NombSimb.equals( l.get(0).NombSimb ) )
-			    R.addAll( First( Reglas.get(i).LadoDerecho ) );
-			
-	        if( R.contains(SimbEspeciales.EPSILON) ){
-    		    if( l.size() == 1 )
-			        return R;
-		
-                R.addAll( First( listToArray(l.subList( 1,l.size()-1 )) ) );
-		
-	        }
+    public ArrayList<SimbolG> First(ArrayList<SimbolG> l){
+        HashSet<String> visit = new HashSet<>();
+        return FirstSecuencia(l, visit);
+    }
 
+    private ArrayList<SimbolG> FirstSecuencia(List<SimbolG> sec, HashSet<String> visit){
+        ArrayList<SimbolG> R = new ArrayList<>();
+        if(sec == null || sec.isEmpty()){
+            return R;
+        }
+
+        for(int idx = 0; idx < sec.size(); idx++){
+            SimbolG s = sec.get(idx);
+            ArrayList<SimbolG> firstS = FirstSimbolo(s, visit);
+
+            boolean contieneEpsilon = false;
+            for(SimbolG f : firstS){
+                if(esEpsilon(f)){
+                    contieneEpsilon = true;
+                    continue;
+                }
+                agregarSiNoEsta(R, f);
+            }
+
+            if(!contieneEpsilon){
+                // No propaga epsilon, terminamos
+                break;
+            }
+
+            // Si es el último y tenía epsilon, se agrega epsilon
+            if(idx == sec.size() - 1){
+                for(SimbolG f : firstS){
+                    if(esEpsilon(f)){
+                        agregarSiNoEsta(R, f);
+                    }
+                }
+            }
         }
 
         return R;
+    }
 
+    private ArrayList<SimbolG> FirstSimbolo(SimbolG s, HashSet<String> visit){
+        ArrayList<SimbolG> R = new ArrayList<>();
+
+        if(s == null){
+            return R;
+        }
+
+        if(s.esTerminal){
+            agregarSiNoEsta(R, s);
+            return R;
+        }
+
+        if(visit.contains(s.NombSimb)){
+            return R;
+        }
+        visit.add(s.NombSimb);
+
+        for(LadoIzq prod : Reglas){
+            if(!prod.SimbIzq.NombSimb.equals(s.NombSimb)){
+                continue;
+            }
+            R.addAll(FirstSecuencia(prod.LadoDerecho, visit));
+        }
+
+        return R;
     }
     
     public ArrayList<SimbolG> Follow(SimbolG s){
-        
-        ArrayList<SimbolG> R = new ArrayList<SimbolG>();
-        ArrayList<SimbolG> aux = new ArrayList<SimbolG>();
-        int j;
-
-        R.clear();
-
-        if ( s.esTerminal )
-            return R;
-
-        for(int i = 0; i < numReglas; i++){
-
-            j = Reglas.get(i).LadoDerecho.indexOf(s);
-            
-            if (j == -1)
-                continue;
-
-            if( j == Reglas.get(i).LadoDerecho.size() - 1 ){
-                if( s.equals(Reglas.get(i).SimbIzq) )
-                    continue;
-
-                R.addAll( Follow( Reglas.get(i).SimbIzq ) );
-                continue;
-
-            }
-
-            aux.clear();
-            //Crear función nueva para sublista
-            aux = listToArray(Reglas.get(i).LadoDerecho.subList( j, Reglas.get(i).LadoDerecho.size() - j ));
-            aux = First( aux );
-            
-            if( aux.get(i).NombSimb.equals( SimbEspeciales.EPSILON ) ){
-
-                aux.remove(SimbEspeciales.EPSILON);
-                R.addAll( aux );
-                R.addAll( Follow( Reglas.get(i).SimbIzq ) );
-                continue;
-
-            }
-
-            R.addAll(aux);
-            
+        ArrayList<SimbolG> vacio = new ArrayList<>();
+        if(s == null || s.esTerminal){
+            return vacio;
         }
 
-        return R;
+        // Inicializar conjuntos de follow
+        HashMap<String, ArrayList<SimbolG>> followMap = new HashMap<>();
+        for(LadoIzq prod : Reglas){
+            followMap.put(prod.SimbIzq.NombSimb, new ArrayList<SimbolG>());
+        }
 
+        // Agregar fin de cadena al símbolo inicial
+        agregarSiNoEsta(followMap.get(SimbIni.NombSimb), new SimbolG(FIN_CADENA, SimbEspeciales.FIN, true));
+
+        boolean cambio = true;
+        while(cambio){
+            cambio = false;
+
+            for(LadoIzq prod : Reglas){
+                List<SimbolG> beta = prod.LadoDerecho;
+                for(int i = 0; i < beta.size(); i++){
+                    SimbolG B = beta.get(i);
+                    if(B.esTerminal){
+                        continue;
+                    }
+
+                    List<SimbolG> resto = beta.subList(i + 1, beta.size());
+                    ArrayList<SimbolG> firstResto = First(new ArrayList<>(resto));
+
+                    for(SimbolG f : firstResto){
+                        if(esEpsilon(f)){
+                            continue;
+                        }
+                        if(agregarSiNoEsta(followMap.get(B.NombSimb), f)){
+                            cambio = true;
+                        }
+                    }
+
+                    boolean restoGeneraEpsilon = firstResto.stream().anyMatch(this::esEpsilon) || resto.isEmpty();
+                    if(restoGeneraEpsilon){
+                        ArrayList<SimbolG> followA = followMap.get(prod.SimbIzq.NombSimb);
+                        if(followA != null){
+                            for(SimbolG f : followA){
+                                if(agregarSiNoEsta(followMap.get(B.NombSimb), f)){
+                                    cambio = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ArrayList<SimbolG> res = followMap.getOrDefault(s.NombSimb, new ArrayList<SimbolG>());
+        return res;
+    }
+
+    private boolean esEpsilon(SimbolG s){
+        if(s == null){
+            return false;
+        }
+        return "EPSILON".equalsIgnoreCase(s.NombSimb) || "EPS".equalsIgnoreCase(s.NombSimb) || s.token == SimbEspeciales.EPSILON;
+    }
+
+    private boolean agregarSiNoEsta(ArrayList<SimbolG> lista, SimbolG elem){
+        if(lista == null || elem == null){
+            return false;
+        }
+        for(SimbolG s : lista){
+            if(s.NombSimb.equals(elem.NombSimb)){
+                return false;
+            }
+        }
+        lista.add(elem);
+        return true;
     }
 
     public ArrayList<SimbolG> listToArray( List<SimbolG> l ){

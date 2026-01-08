@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ArrayList;
 
+import BackEnd.ConexionBaF;
+
 public class PanelMostrarAFD extends JPanel {
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
@@ -34,10 +36,20 @@ public class PanelMostrarAFD extends JPanel {
             btnMostrar.addActionListener((ActionEvent e) -> {
                 String auto = (String) combo.getSelectedItem();
                 
-                JOptionPane.showMessageDialog(this, 
-                    "Mostrando tabla de transiciones y grafo del AFD: '" + auto + "'.\n" +
-                    "(Integración de showAfdDetails/mostrarGrafoAFD pendiente)", 
-                    "Visualización", JOptionPane.INFORMATION_MESSAGE);
+                ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+                BackEnd.AFD afd = ctrl.obtenerAFD(auto);
+                if(afd == null){
+                    JOptionPane.showMessageDialog(this, "No se encontró AFD " + auto, "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                BackEnd.AFD.TransitionTable tabla = afd.buildTransitionTable();
+                String[] cols = tabla.headers.toArray(new String[0]);
+                String[][] data = tabla.rows.toArray(new String[0][]);
+                JTable t = new JTable(data, cols);
+                t.setEnabled(false);
+                JScrollPane sp = new JScrollPane(t);
+                sp.setPreferredSize(new Dimension(640, 360));
+                JOptionPane.showMessageDialog(this, sp, "AFD: " + auto, JOptionPane.INFORMATION_MESSAGE);
             });
             add(btnMostrar);
         }

@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ArrayList;
 
+import BackEnd.ConexionBaF;
+
 public class PanelCrearAFNBasico2char extends JPanel { 
 
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
@@ -79,35 +81,37 @@ public class PanelCrearAFNBasico2char extends JPanel {
                 JOptionPane.showMessageDialog(this, "El carácter de inicio debe ser menor o igual al carácter final.", "Error de Lógica", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            if (currentAfnNames.contains(nombre)) {
-                JOptionPane.showMessageDialog(this, "Ya existe un autómata con el nombre '" + nombre + "'.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
             
-            int token = -1; 
-            String tokenMsg = " (Sin asignar)";
-            
+            int token = 0; 
             if (!tokenStr.isEmpty()) {
                 try {
                     token = Integer.parseInt(tokenStr);
-                    if (token < 1) { 
-                        JOptionPane.showMessageDialog(this, "El Token debe ser un número entero positivo.", "Error de Token", JOptionPane.ERROR_MESSAGE);
+                    if (token < 0) { 
+                        JOptionPane.showMessageDialog(this, "El Token debe ser un número entero no negativo.", "Error de Token", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    tokenMsg = " (Token: " + token + ")";
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "El Token debe ser un número entero válido.", "Error de Token", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
-            
-            String rangoFinal = inicioStr + "-" + finStr;
-            currentAfnNames.add(nombre);
-            JOptionPane.showMessageDialog(this, 
-                "AFN '" + nombre + "' para el rango [" + rangoFinal + "] creado y registrado." + tokenMsg, 
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            
+
+            ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+            String res = ctrl.crearAFNRango(nombre, inicio, fin, token);
+            if(res.startsWith("Error")){
+                JOptionPane.showMessageDialog(this, res, "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!currentAfnNames.contains(nombre)) {
+                currentAfnNames.add(nombre);
+            }
+            AnalisisSintacticoGUI gui = (AnalisisSintacticoGUI) SwingUtilities.getWindowAncestor(this);
+            if(gui != null){
+                gui.registerAutomata(nombre, false);
+            }
+
+            JOptionPane.showMessageDialog(this, res, "Éxito", JOptionPane.INFORMATION_MESSAGE);
             SwingUtilities.getWindowAncestor(this).dispose(); 
         });
         

@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ArrayList;
 
+import BackEnd.ConexionBaF;
+
 public class PanelMostrarAFN extends JPanel {
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
@@ -34,10 +36,14 @@ public class PanelMostrarAFN extends JPanel {
             btnMostrar.addActionListener((ActionEvent e) -> {
                 String auto = (String) combo.getSelectedItem();
                 
-                JOptionPane.showMessageDialog(this, 
-                    "Mostrando detalles y grafo del AFN: '" + auto + "'.\n" +
-                    "(Integración de showAutomataDetails/mostrarGrafoAFN pendiente)", 
-                    "Visualización", JOptionPane.INFORMATION_MESSAGE);
+                ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+                String resumen = ctrl.resumenAFN(auto);
+                JTextArea area = new JTextArea(resumen);
+                area.setEditable(false);
+                area.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                JScrollPane scroll = new JScrollPane(area);
+                scroll.setPreferredSize(new Dimension(520, 360));
+                JOptionPane.showMessageDialog(this, scroll, "AFN: " + auto, JOptionPane.INFORMATION_MESSAGE);
             });
             add(btnMostrar);
         }

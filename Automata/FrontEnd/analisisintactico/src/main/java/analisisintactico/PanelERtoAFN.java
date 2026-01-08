@@ -17,6 +17,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import BackEnd.ConexionBaF;
+
 public class PanelERtoAFN extends JPanel {
 
 	private JTextField txtExpresionRegular;
@@ -107,10 +109,23 @@ public class PanelERtoAFN extends JPanel {
 			return;
 		}
 
-		JOptionPane.showMessageDialog(this,
-			"AFN creado exitosamente\nExpresión: " + expresionRegular,
-			"Éxito",
-			JOptionPane.INFORMATION_MESSAGE);
+        String nombre = "AFN_ER_" + System.currentTimeMillis();
+        ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+        String res = ctrl.crearAFNDesdeER(nombre, expresionRegular, 0);
+        if(res.startsWith("Error")){
+            JOptionPane.showMessageDialog(this, res, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        AnalisisSintacticoGUI gui = (AnalisisSintacticoGUI) javax.swing.SwingUtilities.getWindowAncestor(this);
+        if(gui != null){
+            gui.registerAutomata(nombre, false);
+        }
+
+        JOptionPane.showMessageDialog(this,
+            res + "\nNombre: " + nombre,
+            "Éxito",
+            JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	public JTextField getTxtExpresionRegular() { return txtExpresionRegular; }

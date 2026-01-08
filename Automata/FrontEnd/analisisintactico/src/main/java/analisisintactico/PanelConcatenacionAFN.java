@@ -18,6 +18,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import BackEnd.ConexionBaF;
+
 public class PanelConcatenacionAFN extends JPanel {
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
@@ -66,30 +68,46 @@ public class PanelConcatenacionAFN extends JPanel {
                 return;
             }
 
-            int token = -1;
-            String tokenMsg = " (Sin asignar)";
-            
+            int token = 0;
             if (!tokenStr.isEmpty()) {
                 try {
                     token = Integer.parseInt(tokenStr);
-                    if (token < 1) {
-                        JOptionPane.showMessageDialog(this, "El Token debe ser un número entero positivo.", "Error de Token", JOptionPane.ERROR_MESSAGE);
+                    if (token < 0) {
+                        JOptionPane.showMessageDialog(this, "El Token debe ser un número entero no negativo.", "Error de Token", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    tokenMsg = " (Token: " + token + ")";
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "El Token debe ser un número entero válido.", "Error de Token", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
+
+            ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+            String res = ctrl.concatenarAFNs(auto1, auto2, nombreUsuario);
+            if(res.startsWith("Error")){
+                JOptionPane.showMessageDialog(this, res, "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Asignar token al resultado si se pidió
+            if(token > 0){
+                BackEnd.AFN afnRes = ctrl.obtenerAFN(nombreUsuario);
+                if(afnRes != null){
+                    afnRes.asignarToken(token);
+                }
+            }
+
             availableAutomataNames.remove(auto1); 
             availableAutomataNames.remove(auto2);
-            availableAutomataNames.add(nombreUsuario);
+            if(!availableAutomataNames.contains(nombreUsuario)){
+                availableAutomataNames.add(nombreUsuario);
+            }
+            AnalisisSintacticoGUI gui = (AnalisisSintacticoGUI) SwingUtilities.getWindowAncestor(this);
+            if(gui != null){
+                gui.registerAutomata(nombreUsuario, false);
+            }
 
-            JOptionPane.showMessageDialog(this, 
-                "Concatenación completada. AFN creado: '" + nombreUsuario + "'." + tokenMsg, 
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            
+            JOptionPane.showMessageDialog(this, res, "Éxito", JOptionPane.INFORMATION_MESSAGE);
             SwingUtilities.getWindowAncestor(this).dispose(); 
         });
         add(btnConcatenar);

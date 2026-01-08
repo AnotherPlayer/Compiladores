@@ -22,8 +22,14 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import BackEnd.*;
 
 public class AnalisisSintacticoGUI extends JFrame {
+
+    private static final BackEnd.ConexionBaF controlador = new BackEnd.ConexionBaF();
+    private static final BackEnd.Gramatica gramatica = new BackEnd.Gramatica();
+    private static final BackEnd.LL1 analizadorLL1 = new BackEnd.LL1();
+    private static final BackEnd.LR0 analizadorLR0 = new BackEnd.LR0();
 
     private final List<String> createdAfnNames = new ArrayList<>(); 
     private final List<String> createdAfdNames = new ArrayList<>(); 
@@ -513,5 +519,21 @@ public class AnalisisSintacticoGUI extends JFrame {
      * -------------------------- */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new AnalisisSintacticoGUI().setVisible(true));
+    }
+
+    public static BackEnd.ConexionBaF getControlador(){
+        return controlador;
+    }
+
+    public static BackEnd.Gramatica getGramatica(){
+        return gramatica;
+    }
+
+    public static BackEnd.LL1 getAnalizadorLL1(){
+        return analizadorLL1;
+    }
+
+    public static BackEnd.LR0 getAnalizadorLR0(){
+        return analizadorLR0;
     }
 }

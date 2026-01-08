@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ArrayList;
 
+import BackEnd.ConexionBaF;
+
 public class PanelAnalizarCadena extends JPanel { 
 
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
@@ -37,7 +39,6 @@ public class PanelAnalizarCadena extends JPanel {
 
             JButton btnAnalizar = botonAzul("Analizar Cadena");
             btnAnalizar.addActionListener((ActionEvent e) -> {
-                @SuppressWarnings("unused")
                 String afdSeleccionado = (String) comboAFD.getSelectedItem();
                 String cadena = txtCadena.getText();
                 
@@ -45,20 +46,10 @@ public class PanelAnalizarCadena extends JPanel {
                     JOptionPane.showMessageDialog(this, "La cadena no puede estar vacía.", "Advertencia", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                
-                // Simulación de la lógica de análisis
-                // Aquí iría la llamada a AFD.analizar(cadena).
-                /*boolean esAceptada = Math.random() > 0.5; // Simulación: 50% de probabilidad
-                
-                if (esAceptada) {
-                    JOptionPane.showMessageDialog(this, 
-                        "La cadena '" + cadena + "' fue **ACEPTADA** por el AFD: '" + afdSeleccionado + "'.", 
-                        "Resultado: Aceptada", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, 
-                        "La cadena '" + cadena + "' fue **RECHAZADA** por el AFD: '" + afdSeleccionado + "'.", 
-                        "Resultado: Rechazada", JOptionPane.ERROR_MESSAGE);
-                }*/
+
+                ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+                String res = ctrl.analizarCadenaConAFD(afdSeleccionado, cadena);
+                JOptionPane.showMessageDialog(this, res, "Resultado de análisis", JOptionPane.INFORMATION_MESSAGE);
             });
             add(btnAnalizar);
         }

@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ArrayList;
 
+import BackEnd.ConexionBaF;
+
 public class PanelAFNtoAFD extends JPanel {
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
@@ -51,15 +53,22 @@ public class PanelAFNtoAFD extends JPanel {
                     return;
                 }
                 
-                // Simulación de la lógica de conversión y registro
-                // Aquí iría la llamada a AFN.toAFD().
-                currentAfdNames.add(nombreAFD);
-                
-                JOptionPane.showMessageDialog(this, 
-                    "AFN '" + afnSeleccionado + "' convertido. AFD registrado como '" + nombreAFD + "'.", 
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                
-                // Simular el cierre
+                ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+                String res = ctrl.convertirAFNaAFD(afnSeleccionado, nombreAFD);
+                if(res.startsWith("Error")){
+                    JOptionPane.showMessageDialog(this, res, "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if(!currentAfdNames.contains(nombreAFD)){
+                    currentAfdNames.add(nombreAFD);
+                }
+                AnalisisSintacticoGUI gui = (AnalisisSintacticoGUI) SwingUtilities.getWindowAncestor(this);
+                if(gui != null){
+                    gui.registerAutomata(nombreAFD, true);
+                }
+
+                JOptionPane.showMessageDialog(this, res, "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 SwingUtilities.getWindowAncestor(this).dispose(); 
             });
             add(btnConvertir);

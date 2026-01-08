@@ -1,7 +1,14 @@
+package BackEnd;
+
 //2° parcial
 
 import java.util.ArrayList;
 import java.util.Stack;
+
+import BackEnd.Gramatica;
+import BackEnd.SimbEspeciales;
+import BackEnd.SimbolG;
+import BackEnd.analizadorLexico;
 
 public class LL0 {
 
@@ -16,7 +23,7 @@ public class LL0 {
         lexico = lx;
         reglaPorVn = new int[gramatica.Vn.size()];
         gramaticaValida = true;
-        finCadena = new SimbolG("$", simbEspeciales.FIN, true);
+        finCadena = new SimbolG("$", SimbEspeciales.FIN, true);
         inicializarReglasUnicas();
     }
 
@@ -29,10 +36,10 @@ public class LL0 {
         }
 
         for(i = 0; i < gramatica.numReglas; i++){
-            if(gramatica.Reglas[i] == null || gramatica.Reglas[i].SimbIzq == null){
+            if(gramatica.Reglas.get(i) == null || gramatica.Reglas.get(i).SimbIzq == null){
                 continue;
             }
-            idx = indiceVn(gramatica.Reglas[i].SimbIzq.NombSimb);
+            idx = indiceVn(gramatica.Reglas.get(i).SimbIzq.NombSimb);
             if(idx < 0){
                 gramaticaValida = false;
                 continue;
@@ -64,7 +71,7 @@ public class LL0 {
         if(s.NombSimb != null && s.NombSimb.equals("ε")){
             return true;
         }
-        return s.token == simbEspeciales.EPSILON;
+        return s.token == SimbEspeciales.EPSILON;
     }
 
     private SimbolG simboloVtPorToken(int token){
@@ -75,7 +82,7 @@ public class LL0 {
                 return gramatica.Vt.get(i);
             }
         }
-        if(token == simbEspeciales.FIN){
+        if(token == SimbEspeciales.FIN){
             return finCadena;
         }
         return null;
@@ -121,7 +128,7 @@ public class LL0 {
                     return false;
                 }
 
-                rhs = gramatica.Reglas[prodIdx].LadoDerecho;
+                rhs = gramatica.Reglas.get(prodIdx).LadoDerecho;
                 for(i = rhs.size() - 1; i >= 0; i--){
                     if(esEpsilon(rhs.get(i))){
                         continue;
@@ -131,6 +138,6 @@ public class LL0 {
             }
         }
 
-        return tokenActual == -1 || tokenActual == simbEspeciales.FIN;
+        return tokenActual == -1 || tokenActual == SimbEspeciales.FIN;
     }
 }

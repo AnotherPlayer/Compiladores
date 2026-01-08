@@ -18,6 +18,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import BackEnd.ConexionBaF;
+
 public class PanelCerraduraPositiva extends JPanel {
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
@@ -60,29 +62,42 @@ public class PanelCerraduraPositiva extends JPanel {
                 return;
             }
             
-            int token = -1;
-            String tokenMsg = " (Sin asignar)";
-            
+            int token = 0;
             if (!tokenStr.isEmpty()) {
                 try {
                     token = Integer.parseInt(tokenStr);
-                    if (token < 1) {
-                        JOptionPane.showMessageDialog(this, "El Token debe ser un número entero positivo.", "Error de Token", JOptionPane.ERROR_MESSAGE);
+                    if (token < 0) {
+                        JOptionPane.showMessageDialog(this, "El Token debe ser un número entero no negativo.", "Error de Token", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    tokenMsg = " (Token: " + token + ")";
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "El Token debe ser un número entero válido.", "Error de Token", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
-                availableAutomataNames.remove(auto); 
+            ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+            String res = ctrl.unirAFNs(auto, auto, nombreUsuario, token); // Para cerradura +: equivalentemente AFN_cerrPos en backend
+            if(res.startsWith("Error")){
+                JOptionPane.showMessageDialog(this, res, "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // Reaplicar cerradura positiva directamente sobre el resultado
+            BackEnd.AFN afnRes = ctrl.obtenerAFN(nombreUsuario);
+            if(afnRes != null){
+                afnRes.AFN_cerrPos();
+                afnRes.asignarToken(token);
+            }
+
+            availableAutomataNames.remove(auto); 
+            if(!availableAutomataNames.contains(nombreUsuario)){
                 availableAutomataNames.add(nombreUsuario);
-            
-            JOptionPane.showMessageDialog(this, 
-                "Cerradura Positiva aplicada. AFN creado: '" + nombreUsuario + "'." + tokenMsg, 
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            
+            }
+            AnalisisSintacticoGUI gui = (AnalisisSintacticoGUI) SwingUtilities.getWindowAncestor(this);
+            if(gui != null){
+                gui.registerAutomata(nombreUsuario, false);
+            }
+
+            JOptionPane.showMessageDialog(this, res, "Éxito", JOptionPane.INFORMATION_MESSAGE);
             SwingUtilities.getWindowAncestor(this).dispose(); 
         });
         add(btnAplicar);

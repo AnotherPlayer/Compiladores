@@ -18,6 +18,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import BackEnd.ConexionBaF;
+
 public class PanelUnionAFN extends JPanel {
     private static final Color COLOR_AZUL_ACCENT = new Color(100, 149, 237);
     private static final Color COLOR_TEXTO_OSCURO = new Color(25, 50, 95);
@@ -82,14 +84,24 @@ public class PanelUnionAFN extends JPanel {
                         return;
                     }
                 }
+                ConexionBaF ctrl = AnalisisSintacticoGUI.getControlador();
+                String res = ctrl.unirAFNs(auto1, auto2, nombreUsuario, token);
+                if(res.startsWith("Error")){
+                    JOptionPane.showMessageDialog(this, res, "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 availableAutomataNames.remove(auto1); 
                 availableAutomataNames.remove(auto2);
-                availableAutomataNames.add(nombreUsuario);
+                if(!availableAutomataNames.contains(nombreUsuario)){
+                    availableAutomataNames.add(nombreUsuario);
+                }
+                AnalisisSintacticoGUI gui = (AnalisisSintacticoGUI) SwingUtilities.getWindowAncestor(this);
+                if(gui != null){
+                    gui.registerAutomata(nombreUsuario, false);
+                }
 
-                JOptionPane.showMessageDialog(this, 
-                    "Unión completada. AFN creado: '" + nombreUsuario + "'." + tokenMsg, 
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
+                JOptionPane.showMessageDialog(this, res + tokenMsg, "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 SwingUtilities.getWindowAncestor(this).dispose(); 
             });
             add(btnUnir);

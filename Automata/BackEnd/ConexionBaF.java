@@ -385,6 +385,16 @@ public class ConexionBaF {
         return resultado.toString();
     }
 
+    public String analizarCadenaConAFD(String nombreAFD, String cadena){
+        AFD afd = automatasAFD.get(nombreAFD);
+        if(afd == null){
+            return "Error: No existe el AFD " + nombreAFD;
+        }
+        afdActual = afd;
+        analizador.setAutomata(afdActual);
+        return analizarCadena(cadena);
+    }
+
     // ========== MÉTODOS PARA LA GUI ==========
 
     /**
@@ -596,6 +606,64 @@ public class ConexionBaF {
             return "AFD léxico construido y establecido como actual.";
         } catch (Exception ex) {
             return "Error al construir AFD desde ER: " + ex.getMessage();
+        }
+    }
+
+    /**
+     * Construye un AFN a partir de una expresión regular y lo guarda.
+     */
+    public String crearAFNDesdeER(String nombre, String er, int token){
+        try{
+            if(automatasAFN.containsKey(nombre) || automatasAFD.containsKey(nombre)){
+                return "Error: Ya existe un autómata con ese nombre";
+            }
+            AFN afn = regexBuilder.construir(er, token);
+            automatasAFN.put(nombre, afn);
+            return "AFN '" + nombre + "' construido desde ER \"" + er + "\" con token " + token;
+        }catch(Exception ex){
+            return "Error al construir AFN desde ER: " + ex.getMessage();
+        }
+    }
+
+    public AFN obtenerAFN(String nombre){
+        return automatasAFN.get(nombre);
+    }
+
+    public AFD obtenerAFD(String nombre){
+        return automatasAFD.get(nombre);
+    }
+
+    public String resumenAFN(String nombre){
+        AFN afn = automatasAFN.get(nombre);
+        if(afn == null){
+            return "No se encontró AFN con nombre " + nombre;
+        }
+        return afn.resumen();
+    }
+
+    public String exportarAFDaTSV(String nombreAFD, java.nio.file.Path destino){
+        AFD afd = automatasAFD.get(nombreAFD);
+        if(afd == null){
+            return "No existe el AFD " + nombreAFD;
+        }
+        boolean ok = afd.exportTransitionTable(destino);
+        return ok ? "Archivo guardado en " + destino.toString() : "No se pudo guardar el archivo";
+    }
+
+    /**
+     * Crear AFN a partir de una cadena literal (varios caracteres).
+     */
+    public String crearAFNPorCadena(String nombre, String cadena, int token){
+        try{
+            if(automatasAFN.containsKey(nombre) || automatasAFD.containsKey(nombre)){
+                return "Error: Ya existe un autómata con ese nombre";
+            }
+            AFN nuevo = AFN.fromString(cadena);
+            nuevo.asignarToken(token);
+            automatasAFN.put(nombre, nuevo);
+            return "AFN '" + nombre + "' creado para la cadena \"" + cadena + "\" con token " + token;
+        }catch(Exception ex){
+            return "Error al crear AFN por cadena: " + ex.getMessage();
         }
     }
 
